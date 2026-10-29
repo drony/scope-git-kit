@@ -1,0 +1,62 @@
+name: Publish demo
+
+# Builds the site and publishes only the compiled files to a separate public repository.
+# The source stays in this (private) repository. See docs/deployment.md for the one-time setup.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-demo
+  cancel-in-progress: true
+
+env:
+  # The public repository that serves the demo with GitHub Pages: OWNER/REPO.
+  DEMO_REPO: drony/finscope
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Build
+        run: |
+          # https://<owner>.github.io/<repo>/ serves the site from a sub-path named after the repository.
+          BASE_PATH="/${DEMO_REPO#*/}/" npm run build
+      - name: Publish dist/ to the demo repository
+        env:
+          DEPLOY_KEY: ${{ secrets.DEMO_DEPLOY_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          install -m 600 /dev/null ~/.ssh/demo_key
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/demo_key
+          export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/demo_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+
+          cd dist
+          touch .nojekyll
+          printf '{"source":"%s","builtAt":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > build.json
+          cat > README.md <<EOF
+          # ${DEMO_REPO#*/} demo
+
+          This repository only contains the **compiled demo**, served at https://${DEMO_REPO%/*}.github.io/${DEMO_REPO#*/}/.
+
+          The source code lives in a private repository. Nothing is edited here by hand: a workflow there builds the site and
+          replaces the contents of this repository on every change.
+          EOF
+
+          git init -q -b main
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Publish demo from ${GITHUB_SHA::7}"
+          git push --force "git@github.com:${DEMO_REPO}.git" main
