@@ -1,0 +1,11 @@
+/* The kit's stylesheet. Import it once, before your own styles: `import '@/kit/styles/index.css'`.
+   base.css defines the design tokens and the reset; the rest style components by family. */
+@import './base.css';
+@import './ui.css';
+@import './forms.css';
+@import './overlays.css';
+@import './calendar.css';
+@import './charts.css';
+@import './grid.css';
+@import './mega.css';
+@import './theme.css';

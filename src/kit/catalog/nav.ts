@@ -1,0 +1,106 @@
+import { prop, type ComponentDoc } from './define.ts'
+
+export const navDocs: ComponentDoc[] = [
+  {
+    id: 'tabs',
+    name: 'Tabs',
+    group: 'nav',
+    summary: 'An accessible tab list. Optionally renders the active panel too.',
+    source: 'kit/components/nav/Tabs.tsx',
+    props: [
+      prop('items', '{ id: string; label: ReactNode; count?: number }[]', 'The tabs.', { required: true }),
+      prop('value', 'string', 'Id of the active tab.', { required: true }),
+      prop('onChange', '(id: string) => void', 'Called with the id of the chosen tab.', { required: true }),
+      prop('panels', 'Record<string, ReactNode>', 'Content per tab id; only the active one is rendered.'),
+      prop('ariaLabel', 'string', 'Accessible name of the tab list.', { required: true }),
+    ],
+    example: `<Tabs ariaLabel="Portfolio" value={tab} onChange={setTab}
+  items={[{ id: 'holdings', label: 'Holdings', count: 8 }, { id: 'activity', label: 'Activity' }]}
+  panels={{ holdings: <Holdings />, activity: <Activity /> }} />`,
+    notes: ['← → Home End move between tabs; only the active tab is in the tab order (roving tabindex).'],
+  },
+  {
+    id: 'segmented',
+    name: 'Segmented',
+    group: 'nav',
+    summary: 'A compact single-choice switch, such as chart ranges or list/grid.',
+    source: 'kit/components/nav/Segmented.tsx',
+    props: [
+      prop('options', '{ value: T; label: ReactNode; icon?: ReactNode; disabled?: boolean }[]', 'The choices.', { required: true }),
+      prop('value', 'T', 'Selected value.', { required: true }),
+      prop('onChange', '(value: T) => void', 'Called with the chosen value.', { required: true }),
+      prop('ariaLabel', 'string', 'Accessible group name.', { required: true }),
+      prop('mono', 'boolean', 'Mono uppercase style for ranges such as 1D 1W 1M.'),
+      prop('block', 'boolean', 'Full width, equal-width options.'),
+    ],
+    example: `<Segmented ariaLabel="Range" mono value={range} onChange={setRange} options={['1M', '3M', '1Y'].map((v) => ({ value: v, label: v }))} />`,
+    notes: ['A radio group: arrow keys move and select; disabled options are skipped.'],
+  },
+  {
+    id: 'accordion',
+    name: 'Accordion',
+    group: 'nav',
+    summary: 'A list of disclosure sections built on native `<details>`.',
+    source: 'kit/components/nav/Accordion.tsx',
+    props: [
+      prop('items', '{ id: string; title: ReactNode; content: ReactNode }[]', 'The sections.', { required: true }),
+      prop('name', 'string', 'Shared name: only one section is open at a time.'),
+      prop('defaultOpen', 'string', 'Id of the section open at first.'),
+    ],
+    example: `<Accordion name="faq" items={[{ id: 'a', title: 'Is there a free plan?', content: <p>Yes.</p> }]} />`,
+  },
+  {
+    id: 'breadcrumbs',
+    name: 'Breadcrumbs',
+    group: 'nav',
+    summary: 'A trail of links to the current page.',
+    source: 'kit/components/nav/Breadcrumbs.tsx',
+    props: [prop('items', '{ label: string; to?: string }[]', 'Trail, last item is the current page and is not a link.', { required: true })],
+    example: `<Breadcrumbs items={[{ label: 'Markets', to: '/markets' }, { label: 'AAPL' }]} />`,
+    notes: ['Rendered as an ordered list inside `nav[aria-label="Breadcrumb"]`; the last item has `aria-current="page"`.'],
+  },
+  {
+    id: 'pagination',
+    name: 'Pagination',
+    group: 'nav',
+    summary: 'Previous / next and numbered pages with ellipses (1 … 4 5 [6] 7 8 … 20).',
+    source: 'kit/components/nav/Pagination.tsx',
+    props: [
+      prop('page', 'number', 'Current page, starting at 1.', { required: true }),
+      prop('pageCount', 'number', 'Total pages. Renders nothing when there is only one.', { required: true }),
+      prop('onChange', '(page: number) => void', 'Called with the chosen page.', { required: true }),
+    ],
+    example: `<Pagination page={page} pageCount={12} onChange={setPage} />`,
+  },
+  {
+    id: 'stepper',
+    name: 'Stepper',
+    group: 'nav',
+    summary: 'Progress through a multi-step flow.',
+    source: 'kit/components/nav/Stepper.tsx',
+    props: [
+      prop('steps', 'string[]', 'Step names.', { required: true }),
+      prop('current', 'number', 'Index of the current step, starting at 0.', { required: true }),
+    ],
+    example: `<Stepper steps={['Account', 'Profile', 'Plan']} current={1} />`,
+    notes: ['Labels of non-current steps are hidden on narrow screens.'],
+  },
+  {
+    id: 'mega-menu',
+    name: 'MegaMenu',
+    group: 'nav',
+    summary: 'The primary navigation list with a mega panel per entry. It knows nothing about your data: entries and the side column come in as props.',
+    source: 'kit/components/nav/MegaMenu.tsx',
+    exports: ['MegaMenu'],
+    props: [
+      prop('entries', 'NavEntry<P, F>[]', 'Menu structure. An entry with `mega` has a panel of `columns`; one without is a plain link. Types are in `kit/components/nav/navTypes.ts`.', { required: true }),
+      prop('renderSide', '(ctx: { entry; item; close }) => ReactNode', 'Content of the side column. `item` is the link under the pointer or focus, or null. Return a default card when it is null.'),
+    ],
+    example: `<MegaMenu entries={NAV} renderSide={({ entry, item, close }) => item ? <Preview item={item} onNavigate={close} /> : <Featured entry={entry} />} />`,
+    notes: [
+      'Opens on hover (with a short intent delay), click, or ↓ on the trigger; Esc closes and returns focus to the trigger.',
+      'Links can carry any `preview` data; the kit hands it back through `renderSide` untouched.',
+      'The page behind the panel is dimmed with a `mega-open` class on `<body>`. Styles: `kit/styles/mega.css`.',
+    ],
+  },
+]

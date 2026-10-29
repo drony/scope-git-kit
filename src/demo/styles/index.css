@@ -1,0 +1,3 @@
+/* Styles that belong to the demo app only: its header, footer and page layouts. */
+@import './layout.css';
+@import './pages.css';

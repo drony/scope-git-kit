@@ -1,23 +1,23 @@
 import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
-import { Layout } from '@/components/layout/Layout'
-import Home from '@/pages/Home'
+import { Layout } from '@/demo/layout/Layout'
+import Home from '@/demo/pages/Home'
 
 // Everything except the home page is split into its own chunk.
-const Dashboard = lazy(() => import('@/pages/Dashboard'))
-const Markets = lazy(() => import('@/pages/Markets'))
-const Asset = lazy(() => import('@/pages/Asset'))
-const CalendarPage = lazy(() => import('@/pages/CalendarPage'))
-const Tables = lazy(() => import('@/pages/Tables'))
-const Login = lazy(() => import('@/pages/Login'))
-const Register = lazy(() => import('@/pages/Register'))
-const Forgot = lazy(() => import('@/pages/Forgot'))
-const Help = lazy(() => import('@/pages/Help'))
-const HelpArticle = lazy(() => import('@/pages/HelpArticle'))
-const Pricing = lazy(() => import('@/pages/Pricing'))
-const Components = lazy(() => import('@/pages/Components'))
-const Settings = lazy(() => import('@/pages/Settings'))
-const NotFound = lazy(() => import('@/pages/NotFound'))
+const Dashboard = lazy(() => import('@/demo/pages/Dashboard'))
+const Markets = lazy(() => import('@/demo/pages/Markets'))
+const Asset = lazy(() => import('@/demo/pages/Asset'))
+const CalendarPage = lazy(() => import('@/demo/pages/CalendarPage'))
+const Tables = lazy(() => import('@/demo/pages/Tables'))
+const Login = lazy(() => import('@/demo/pages/Login'))
+const Register = lazy(() => import('@/demo/pages/Register'))
+const Forgot = lazy(() => import('@/demo/pages/Forgot'))
+const Help = lazy(() => import('@/demo/pages/Help'))
+const HelpArticle = lazy(() => import('@/demo/pages/HelpArticle'))
+const Pricing = lazy(() => import('@/demo/pages/Pricing'))
+const Components = lazy(() => import('@/demo/pages/Components'))
+const Settings = lazy(() => import('@/demo/pages/Settings'))
+const NotFound = lazy(() => import('@/demo/pages/NotFound'))
 
 export function App() {
   return (

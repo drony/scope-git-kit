@@ -5,9 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "npm run check && vite build",
+    "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "preview": "vite preview"
+    "check": "tsc --noEmit && npm run check:layers && npm run docs:check",
+    "check:layers": "node scripts/check-layers.mjs",
+    "docs": "node scripts/build-docs.ts",
+    "docs:check": "node scripts/build-docs.ts --check"
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.20",
