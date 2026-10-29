@@ -58,10 +58,19 @@ export interface GridHistory {
 }
 
 export interface GridSave {
-  dirty: boolean
+  /** "saving" while autosave waits to write a change, "unsaved" when autosave is off and changes are pending. */
+  status: 'saved' | 'saving' | 'unsaved'
+  savedAt: Date | null
   onSave: () => void
+  autosave: boolean
+  onAutosave: (on: boolean) => void
 }
+
+/** Things a person can do in the grid, reported through `onInteraction` (used by the "Try it" checklist). */
+export type GridEvent = 'edit' | 'undo' | 'redo' | 'range' | 'sort' | 'filter' | 'group' | 'collapse' | 'expand' | 'columns' | 'density' | 'export'
 
 export interface DataGridHandle {
   exportCsv: () => void
+  /** Applies edits as if typed in the grid: one undo step, an Undo message and a highlight. */
+  edit: (changes: CellChange[]) => void
 }

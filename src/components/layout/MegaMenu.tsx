@@ -8,6 +8,7 @@ import { useFormat } from '@/lib/format'
 import { Sparkline } from '@/components/charts/Sparkline'
 import { Delta } from '@/components/ui/Badge'
 import { Tag } from '@/components/ui/Badge'
+import { MegaPreview } from './MegaPreview'
 
 /* ---- featured card (right side of a mega panel) --------------------------------- */
 
@@ -63,6 +64,8 @@ function Featured({ data, onNavigate }: { data: MegaFeatured; onNavigate: () => 
 
 export function MegaMenu() {
   const [open, setOpen] = useState<string | null>(null)
+  /** The menu item under the pointer (or focused); the side panel previews it. */
+  const [previewId, setPreviewId] = useState<string | null>(null)
   const via = useRef<'hover' | 'click' | 'key'>('hover')
   const timer = useRef<number | undefined>(undefined)
   const root = useRef<HTMLUListElement>(null)
@@ -80,6 +83,9 @@ export function MegaMenu() {
   }, [location.pathname, location.search, location.hash])
 
   useEffect(() => () => window.clearTimeout(timer.current), [])
+
+  // A freshly opened panel starts with its default card; the preview follows the pointer from there.
+  useEffect(() => setPreviewId(null), [open])
 
   // The dimmed backdrop lives on <body>: a fixed element inside the blurred header would be clipped to it.
   useEffect(() => {
@@ -133,6 +139,7 @@ export function MegaMenu() {
     >
       {NAV.map((entry) => {
         const isOpen = open === entry.id
+        const previewItem = isOpen ? entry.mega?.columns.flatMap((c) => c.items).find((i) => i.id === previewId) : undefined
         if (!entry.mega) {
           return (
             <li key={entry.id} onPointerEnter={(e) => e.pointerType === 'mouse' && schedule(null, 60)}>
@@ -181,7 +188,13 @@ export function MegaMenu() {
                         <ul>
                           {col.items.map((item) => (
                             <li key={item.id}>
-                              <Link className="mega-item" to={item.to} onClick={close}>
+                              <Link
+                                className={cn('mega-item', previewId === item.id && 'is-previewed')}
+                                to={item.to}
+                                onClick={close}
+                                onPointerEnter={() => setPreviewId(item.id)}
+                                onFocus={() => setPreviewId(item.id)}
+                              >
                                 {item.icon && (
                                   <span className="mega-icon">
                                     <item.icon size={16} aria-hidden="true" />
@@ -200,7 +213,11 @@ export function MegaMenu() {
                         </ul>
                       </div>
                     ))}
-                    {entry.mega.featured && <Featured data={entry.mega.featured} onNavigate={close} />}
+                    {previewItem ? (
+                      <MegaPreview key={previewItem.id} item={previewItem} onNavigate={close} />
+                    ) : (
+                      entry.mega.featured && <Featured data={entry.mega.featured} onNavigate={close} />
+                    )}
                   </div>
                 </div>
               </div>

@@ -1,9 +1,10 @@
 import { useMemo, useRef, useState } from 'react'
-import { Download } from 'lucide-react'
+import { Download, Sparkles } from 'lucide-react'
 import { useSite } from '@/context/ConfigContext'
 import { useToast } from '@/context/ToastContext'
 import { useFormat } from '@/lib/format'
 import { useLang, useText } from '@/lib/i18n'
+import { useAutosave } from '@/lib/useAutosave'
 import { useHistory } from '@/lib/useHistory'
 import { today } from '@/lib/date'
 import {
@@ -22,12 +23,28 @@ import {
 import { Button } from '@/components/ui/Button'
 import { DataGrid } from '@/components/grid/DataGrid'
 import { Signed } from '@/components/grid/Signed'
-import type { CellChange, DataGridHandle, FilterDef, GridColumn, GroupOption } from '@/components/grid/types'
+import { TryList, type TryTask } from '@/components/grid/TryList'
+import { useTryList } from '@/components/grid/useTryList'
+import type { CellChange, DataGridHandle, FilterDef, GridColumn, GridEvent, GroupOption } from '@/components/grid/types'
 import { MonthField, type YearMonth } from '@/components/calendar/MonthPicker'
 import { Sparkline } from '@/components/charts/Sparkline'
 import { TableHead } from './TableHead'
 
 const STORAGE = 'finscope.table.cashflow'
+const TRY_STORAGE = 'finscope.try.cashflow'
+
+/** Which grid events tick off which step of the "Try it" list. */
+const EVENT_TASKS: Partial<Record<GridEvent, string>> = {
+  edit: 'edit',
+  undo: 'undo',
+  range: 'range',
+  sort: 'sortfilter',
+  filter: 'sortfilter',
+  group: 'group',
+  collapse: 'group',
+  expand: 'expand',
+  columns: 'columns',
+}
 
 const TEXT = {
   en: {
@@ -59,6 +76,28 @@ const TEXT = {
     saved: 'Saved',
     savedHint: 'Your edits are stored in this browser.',
     keys: 'Enter or double-click to edit · arrows to move · Shift to select a range · paste from a spreadsheet · ⌘Z to undo',
+    tips: 'Try it',
+    tryTitle: 'Try the features',
+    tryDone: 'You have tried everything. Your edits are saved automatically in this browser.',
+    hide: 'Hide',
+    tEdit: 'Edit a number',
+    tEditHint: 'Double-click a cell, or press Enter. Type a new amount and press Enter.',
+    tEditDo: 'Do it for me',
+    tUndo: 'Undo it',
+    tUndoHint: 'Press ⌘Z, or use the Undo button in the message that appears.',
+    tUndoDo: 'Undo',
+    tRange: 'Select a range',
+    tRangeHint: 'Click a cell, then hold Shift and press the arrow keys. The sum shows at the bottom.',
+    tSort: 'Sort or filter',
+    tSortHint: 'Click a column title, or open Filter.',
+    tGroup: 'Collapse a group',
+    tGroupHint: 'Click the arrow next to EXPENSES.',
+    tExpand: 'Open a row',
+    tExpandHint: 'Click the arrow next to a category for its trend.',
+    tMonth: 'Change the month',
+    tMonthHint: 'Use the month picker at the top right.',
+    tColumns: 'Show the Note column',
+    tColumnsHint: 'Open Columns and tick Note.',
   },
   tr: {
     workspace: 'Çalışma alanı',
@@ -89,6 +128,28 @@ const TEXT = {
     saved: 'Kaydedildi',
     savedHint: 'Düzenlemeleriniz bu tarayıcıda saklanır.',
     keys: 'Düzenlemek için Enter veya çift tık · oklarla gezin · aralık için Shift · e-tablodan yapıştırın · geri almak için ⌘Z',
+    tips: 'Dene',
+    tryTitle: 'Özellikleri dene',
+    tryDone: 'Hepsini denedin. Düzenlemelerin bu tarayıcıda otomatik kaydediliyor.',
+    hide: 'Gizle',
+    tEdit: 'Bir sayıyı düzenle',
+    tEditHint: 'Hücreye çift tıkla ya da Enter’a bas. Yeni tutarı yaz, Enter’a bas.',
+    tEditDo: 'Benim yerime yap',
+    tUndo: 'Geri al',
+    tUndoHint: '⌘Z’ye bas ya da çıkan mesajdaki Geri al düğmesini kullan.',
+    tUndoDo: 'Geri al',
+    tRange: 'Aralık seç',
+    tRangeHint: 'Bir hücreye tıkla, sonra Shift tuşuna basılı tutup ok tuşlarına bas. Toplam en altta görünür.',
+    tSort: 'Sırala ya da filtrele',
+    tSortHint: 'Bir sütun başlığına tıkla ya da Filtrele’yi aç.',
+    tGroup: 'Bir grubu daralt',
+    tGroupHint: 'GİDERLER yanındaki oka tıkla.',
+    tExpand: 'Bir satırı aç',
+    tExpandHint: 'Eğilimi görmek için bir kategorinin yanındaki oka tıkla.',
+    tMonth: 'Ayı değiştir',
+    tMonthHint: 'Sağ üstteki ay seçiciyi kullan.',
+    tColumns: 'Açıklama sütununu göster',
+    tColumnsHint: 'Sütunlar’ı aç ve Açıklama’yı işaretle.',
   },
 }
 
@@ -100,11 +161,27 @@ export function CashFlowTable() {
   const toast = useToast()
   const gridApi = useRef<DataGridHandle | null>(null)
 
-  const [focus, setFocus] = useState<YearMonth>(() => ({ year: today().getFullYear(), month: today().getMonth() }))
+  const tryout = useTryList(TRY_STORAGE, EVENT_TASKS)
+  const [focus, setFocusState] = useState<YearMonth>(() => ({ year: today().getFullYear(), month: today().getMonth() }))
+  const setFocus = (next: YearMonth) => {
+    setFocusState(next)
+    tryout.mark('month')
+  }
   const history = useHistory<Edits>(() => loadEdits(STORAGE))
   const [saved, setSaved] = useState<Edits>(history.value)
   const edits = history.value
   const dirty = !sameEdits(edits, saved)
+
+  // Edits are written to this browser a moment after the last change; the person can switch that off.
+  const autosave = useAutosave({
+    value: edits,
+    dirty,
+    storageKey: STORAGE,
+    save: () => {
+      saveEdits(STORAGE, edits)
+      setSaved(edits)
+    },
+  })
 
   /** The four months shown: the chosen month and the three before it. */
   const months = useMemo(
@@ -186,10 +263,44 @@ export function CashFlowTable() {
     })
 
   const onSave = () => {
-    saveEdits(STORAGE, edits)
-    setSaved(edits)
+    autosave.saveNow()
     toast.push({ tone: 'success', title: t.saved, description: t.savedHint })
   }
+
+  const payroll = CASH_ROWS[0]
+  const tasks: TryTask[] = [
+    {
+      id: 'edit',
+      title: t.tEdit,
+      hint: t.tEditHint,
+      action: {
+        label: t.tEditDo,
+        run: () =>
+          gridApi.current?.edit([
+            { rowId: payroll.id, colId: `m:${monthKey(focus.year, focus.month)}`, value: cashAmount(payroll, edits, focus.year, focus.month) - 25_000 },
+          ]),
+      },
+    },
+    {
+      id: 'undo',
+      title: t.tUndo,
+      hint: t.tUndoHint,
+      action: {
+        label: t.tUndoDo,
+        run: () => {
+          if (!history.canUndo) return
+          history.undo()
+          tryout.mark('undo')
+        },
+      },
+    },
+    { id: 'range', title: t.tRange, hint: t.tRangeHint },
+    { id: 'sortfilter', title: t.tSort, hint: t.tSortHint },
+    { id: 'group', title: t.tGroup, hint: t.tGroupHint },
+    { id: 'expand', title: t.tExpand, hint: t.tExpandHint },
+    { id: 'month', title: t.tMonth, hint: t.tMonthHint },
+    { id: 'columns', title: t.tColumns, hint: t.tColumnsHint },
+  ]
 
   const detail = (row: CashRowDef) => {
     const series = [5, 4, 3, 2, 1, 0].map((back) => {
@@ -233,6 +344,13 @@ export function CashFlowTable() {
         lead={t.lead}
         actions={
           <>
+            <Button variant="ghost" aria-expanded={tryout.open} onClick={() => tryout.setOpen(!tryout.open)}>
+              <Sparkles aria-hidden="true" />
+              {t.tips}
+              <span className="g-badge">
+                {tryout.done.size}/{tasks.length}
+              </span>
+            </Button>
             <div style={{ width: '11.5rem' }}>
               <MonthField ariaLabel={t.month} value={focus} onChange={setFocus} min={new Date(2024, 0, 1)} max={new Date(2028, 11, 31)} />
             </div>
@@ -243,6 +361,9 @@ export function CashFlowTable() {
           </>
         }
       />
+      {tryout.open && (
+        <TryList heading={t.tryTitle} tasks={tasks} done={tryout.done} allDoneText={t.tryDone} closeLabel={t.hide} onClose={() => tryout.setOpen(false)} />
+      )}
       <DataGrid<CashRowDef>
         title={t.grid}
         unit={currency}
@@ -258,8 +379,9 @@ export function CashFlowTable() {
         totalLabel={t.net}
         onEdit={onEdit}
         history={history}
-        save={{ dirty, onSave }}
+        save={{ status: autosave.status, savedAt: autosave.savedAt, onSave, autosave: autosave.enabled, onAutosave: autosave.setEnabled }}
         apiRef={gridApi}
+        onInteraction={tryout.onInteraction}
       />
       <p className="grid-hint">{t.keys}</p>
     </div>

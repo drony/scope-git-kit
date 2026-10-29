@@ -1,9 +1,10 @@
 import { useMemo, useRef, useState } from 'react'
-import { Download } from 'lucide-react'
+import { Download, Sparkles } from 'lucide-react'
 import { useSite } from '@/context/ConfigContext'
 import { useToast } from '@/context/ToastContext'
 import { useFormat } from '@/lib/format'
 import { useText } from '@/lib/i18n'
+import { useAutosave } from '@/lib/useAutosave'
 import { useHistory } from '@/lib/useHistory'
 import { editKey, loadEdits, sameEdits, saveEdits, type Edits } from '@/lib/finance'
 import { HOLDINGS, assetBySymbol, assetStats, type AssetClass } from '@/lib/mock'
@@ -11,11 +12,26 @@ import { AssetIcon } from '@/components/ui/AssetIcon'
 import { Button } from '@/components/ui/Button'
 import { DataGrid } from '@/components/grid/DataGrid'
 import { Signed } from '@/components/grid/Signed'
-import type { CellChange, DataGridHandle, FilterDef, GridColumn, GroupOption } from '@/components/grid/types'
+import { TryList, type TryTask } from '@/components/grid/TryList'
+import { useTryList } from '@/components/grid/useTryList'
+import type { CellChange, DataGridHandle, FilterDef, GridColumn, GridEvent, GroupOption } from '@/components/grid/types'
 import { Sparkline } from '@/components/charts/Sparkline'
 import { TableHead } from './TableHead'
 
 const STORAGE = 'finscope.table.positions'
+const TRY_STORAGE = 'finscope.try.positions'
+
+/** Which grid events tick off which step of the "Try it" list. */
+const EVENT_TASKS: Partial<Record<GridEvent, string>> = {
+  edit: 'edit',
+  undo: 'undo',
+  range: 'range',
+  sort: 'sortfilter',
+  filter: 'sortfilter',
+  group: 'group',
+  collapse: 'group',
+  expand: 'expand',
+}
 
 interface Position {
   symbol: string
@@ -57,6 +73,24 @@ const TEXT = {
     classes: { stock: 'Stocks', etf: 'ETFs', crypto: 'Crypto', fx: 'Forex', commodity: 'Commodities' } as Record<AssetClass, string>,
     saved: 'Saved',
     savedHint: 'Your edits are stored in this browser.',
+    tips: 'Try it',
+    tryTitle: 'Try the features',
+    tryDone: 'You have tried everything. Your edits are saved automatically in this browser.',
+    hide: 'Hide',
+    tEdit: 'Change a quantity',
+    tEditHint: 'Double-click a Quantity or Avg. cost cell, type a number, press Enter. Value and profit follow.',
+    tEditDo: 'Do it for me',
+    tUndo: 'Undo it',
+    tUndoHint: 'Press ⌘Z, or use the Undo button in the message that appears.',
+    tUndoDo: 'Undo',
+    tRange: 'Select a range',
+    tRangeHint: 'Click a cell, then hold Shift and press the arrow keys. The sum shows at the bottom.',
+    tSort: 'Sort or filter',
+    tSortHint: 'Click a column title, or open Filter.',
+    tGroup: 'Collapse a group',
+    tGroupHint: 'Click the arrow next to a group, such as STOCKS.',
+    tExpand: 'Open a row',
+    tExpandHint: 'Click the arrow next to an asset for its 30-day trend.',
   },
   tr: {
     workspace: 'Çalışma alanı',
@@ -85,6 +119,24 @@ const TEXT = {
     classes: { stock: 'Hisse senetleri', etf: 'ETF’ler', crypto: 'Kripto', fx: 'Döviz', commodity: 'Emtia' } as Record<AssetClass, string>,
     saved: 'Kaydedildi',
     savedHint: 'Düzenlemeleriniz bu tarayıcıda saklanır.',
+    tips: 'Dene',
+    tryTitle: 'Özellikleri dene',
+    tryDone: 'Hepsini denedin. Düzenlemelerin bu tarayıcıda otomatik kaydediliyor.',
+    hide: 'Gizle',
+    tEdit: 'Bir adedi değiştir',
+    tEditHint: 'Adet ya da Ort. maliyet hücresine çift tıkla, bir sayı yaz, Enter’a bas. Değer ve kâr onunla birlikte güncellenir.',
+    tEditDo: 'Benim yerime yap',
+    tUndo: 'Geri al',
+    tUndoHint: '⌘Z’ye bas ya da çıkan mesajdaki Geri al düğmesini kullan.',
+    tUndoDo: 'Geri al',
+    tRange: 'Aralık seç',
+    tRangeHint: 'Bir hücreye tıkla, sonra Shift tuşuna basılı tutup ok tuşlarına bas. Toplam en altta görünür.',
+    tSort: 'Sırala ya da filtrele',
+    tSortHint: 'Bir sütun başlığına tıkla ya da Filtrele’yi aç.',
+    tGroup: 'Bir grubu daralt',
+    tGroupHint: 'HİSSE SENETLERİ gibi bir grubun yanındaki oka tıkla.',
+    tExpand: 'Bir satırı aç',
+    tExpandHint: '30 günlük eğilimi görmek için bir varlığın yanındaki oka tıkla.',
   },
 }
 
@@ -95,10 +147,22 @@ export function PositionsTable() {
   const toast = useToast()
   const gridApi = useRef<DataGridHandle | null>(null)
 
+  const tryout = useTryList(TRY_STORAGE, EVENT_TASKS)
   const history = useHistory<Edits>(() => loadEdits(STORAGE))
   const [saved, setSaved] = useState<Edits>(history.value)
   const edits = history.value
   const dirty = !sameEdits(edits, saved)
+
+  // Edits are written to this browser a moment after the last change; the person can switch that off.
+  const autosave = useAutosave({
+    value: edits,
+    dirty,
+    storageKey: STORAGE,
+    save: () => {
+      saveEdits(STORAGE, edits)
+      setSaved(edits)
+    },
+  })
 
   const rows = useMemo<Position[]>(
     () =>
@@ -236,10 +300,41 @@ export function PositionsTable() {
     })
 
   const onSave = () => {
-    saveEdits(STORAGE, edits)
-    setSaved(edits)
+    autosave.saveNow()
     toast.push({ tone: 'success', title: t.saved, description: t.savedHint })
   }
+
+  const tasks: TryTask[] = [
+    {
+      id: 'edit',
+      title: t.tEdit,
+      hint: t.tEditHint,
+      action: {
+        label: t.tEditDo,
+        run: () => {
+          const aapl = rows.find((r) => r.symbol === 'AAPL')
+          if (aapl) gridApi.current?.edit([{ rowId: aapl.symbol, colId: 'qty', value: aapl.qty + 10 }])
+        },
+      },
+    },
+    {
+      id: 'undo',
+      title: t.tUndo,
+      hint: t.tUndoHint,
+      action: {
+        label: t.tUndoDo,
+        run: () => {
+          if (!history.canUndo) return
+          history.undo()
+          tryout.mark('undo')
+        },
+      },
+    },
+    { id: 'range', title: t.tRange, hint: t.tRangeHint },
+    { id: 'sortfilter', title: t.tSort, hint: t.tSortHint },
+    { id: 'group', title: t.tGroup, hint: t.tGroupHint },
+    { id: 'expand', title: t.tExpand, hint: t.tExpandHint },
+  ]
 
   const detail = (r: Position) => (
     <>
@@ -273,12 +368,24 @@ export function PositionsTable() {
         title={t.title}
         lead={t.lead}
         actions={
-          <Button variant="ghost" onClick={() => gridApi.current?.exportCsv()}>
-            <Download aria-hidden="true" />
-            {t.export}
-          </Button>
+          <>
+            <Button variant="ghost" aria-expanded={tryout.open} onClick={() => tryout.setOpen(!tryout.open)}>
+              <Sparkles aria-hidden="true" />
+              {t.tips}
+              <span className="g-badge">
+                {tryout.done.size}/{tasks.length}
+              </span>
+            </Button>
+            <Button variant="ghost" onClick={() => gridApi.current?.exportCsv()}>
+              <Download aria-hidden="true" />
+              {t.export}
+            </Button>
+          </>
         }
       />
+      {tryout.open && (
+        <TryList heading={t.tryTitle} tasks={tasks} done={tryout.done} allDoneText={t.tryDone} closeLabel={t.hide} onClose={() => tryout.setOpen(false)} />
+      )}
       <DataGrid<Position>
         title={t.grid}
         unit={currency}
@@ -294,8 +401,9 @@ export function PositionsTable() {
         totalLabel={t.total}
         onEdit={onEdit}
         history={history}
-        save={{ dirty, onSave }}
+        save={{ status: autosave.status, savedAt: autosave.savedAt, onSave, autosave: autosave.enabled, onAutosave: autosave.setEnabled }}
         apiRef={gridApi}
+        onInteraction={tryout.onInteraction}
       />
     </div>
   )

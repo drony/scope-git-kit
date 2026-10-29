@@ -52,7 +52,13 @@ src/
 - Search, filter chips, sort, group (collapsible, with subtotals), column visibility, density and a totals row.
 - Editable cells: Enter, F2, double-click or just start typing. Arrow keys move, Shift selects a range, Delete clears,
   copy and paste work with spreadsheets. The footer shows the selection (`E4`) and its sum.
-- Undo and redo (⌘Z / ⇧⌘Z), a Save button with an unsaved-changes status, CSV export, pagination, expandable detail rows.
+- Crosshair: the row and column under the pointer (or the keyboard cursor) are highlighted, and cells whose value just changed flash.
+- Every edit shows a message with a working **Undo** button (then **Redo**); ⌘Z / ⇧⌘Z and the header buttons do the same.
+- **Autosave** writes edits a moment after the last change ("Saving…" → "All changes saved · time"). The switch in the header
+  turns it off, which brings back the Save button and an "Unsaved changes" status.
+- A **Try it** checklist above each table ticks itself off as the visitor edits, undoes, selects, sorts, filters and so on,
+  with "Do it for me" buttons for the first steps. Pass `onInteraction` to `DataGrid` and use `useTryList` to add one to a new table.
+- CSV export, pagination, expandable detail rows.
 - Column visibility, density and page size are remembered per table (`storageKey`); saved edits live in `localStorage`.
 - Text follows the site locale (English or Türkçe). Set **General → Language** to Türkçe and the currency to TRY in the
   theme editor to see the Turkish version.
@@ -69,7 +75,9 @@ To add a table, define `columns` (the first one is the pinned row label), pass `
 - **Sample data.** Prices, holdings and transactions come from `src/lib/mock.ts`. Replace it with your API layer.
 - **Demo auth.** `AuthContext` only stores a name and email in `localStorage`. Swap in a real provider.
   The demo two-step code is `123456`.
-- **Navigation.** Edit `src/config/navigation.ts` to change the mega menu, mobile menu and footer.
+- **Navigation.** Edit `src/config/navigation.ts` to change the mega menu, mobile menu and footer. Each mega menu item can have a
+  `preview` (assets, portfolio, events, table, news, articles, palette or a list of points); the side panel shows it while the
+  item is hovered or focused (`src/components/layout/MegaPreview.tsx`).
 - **Colors in CSS.** Never hard-code colors; use the variables from `base.css` (`--ink`, `--accent`, `--primary` ...).
 - **Photos.** `public/images/*.svg` are generated placeholders. Pass any `src` to `Shot` / `Gallery`.
 - The Theme button only appears on the dev server. `/settings` is always available in production.

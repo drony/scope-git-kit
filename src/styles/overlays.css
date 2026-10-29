@@ -259,6 +259,19 @@
 .toast-info > svg {
   color: var(--accent);
 }
+.toast-action {
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: var(--primary-text);
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: background 0.12s var(--ease);
+}
+.toast-action:hover {
+  background: var(--primary-hover);
+}
 .toast-close {
   margin-left: auto;
   color: var(--muted);

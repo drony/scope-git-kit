@@ -1,6 +1,7 @@
 import {
   Fragment,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -8,6 +9,7 @@ import {
   type KeyboardEvent,
   type MouseEvent,
   type MutableRefObject,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
 import {
@@ -45,7 +47,7 @@ import { CellEditor, type CommitDirection } from './CellEditor'
 import { ColumnsMenu, FilterMenu, SortMenu, ViewMenu, type Density, type SortState } from './GridMenus'
 import { columnLetter, csvDelimiter, downloadText, parseNumber, plainNumber, toCsv } from './gridUtils'
 import { useGridText } from './text'
-import type { CellChange, DataGridHandle, FilterDef, GridColumn, GridHistory, GridSave, GroupOption } from './types'
+import type { CellChange, CellValue, DataGridHandle, FilterDef, GridColumn, GridEvent, GridHistory, GridSave, GroupOption } from './types'
 
 /* ---- types ------------------------------------------------------------------------------ */
 
@@ -94,8 +96,10 @@ export interface DataGridProps<R> {
   save?: GridSave
   /** Used to remember column visibility, density and page size in this browser. */
   storageKey: string
-  /** Lets the page call `exportCsv()` from its own button. */
+  /** Lets the page call `exportCsv()` or `edit()` from its own buttons. */
   apiRef?: MutableRefObject<DataGridHandle | null>
+  /** Called when the person does something notable (edit, sort, filter …). */
+  onInteraction?: (event: GridEvent) => void
 }
 
 /* ---- helpers ----------------------------------------------------------------------------- */
@@ -165,6 +169,7 @@ export function DataGrid<R>({
   save,
   storageKey,
   apiRef,
+  onInteraction,
 }: DataGridProps<R>) {
   const t = useGridText()
   const { locale } = useSite()
@@ -189,6 +194,27 @@ export function DataGrid<R>({
   const [editing, setEditing] = useState<Editing | null>(null)
   const [invalid, setInvalid] = useState(false)
   const focusAfter = useRef(false)
+  /** Row and/or column under the pointer, for the crosshair highlight. */
+  const [hover, setHover] = useState<{ r: string | null; c: string | null } | null>(null)
+  /** Cells whose value just changed (edit, undo, redo); they flash briefly. */
+  const [flash, setFlash] = useState<Set<string>>(() => new Set())
+  const flashTimer = useRef<number | undefined>(undefined)
+  const prevValues = useRef<Map<string, CellValue> | null>(null)
+  const autoId = useId()
+
+  const emit = (event: GridEvent) => onInteraction?.(event)
+  // Undo and redo from every place (buttons, ⌘Z, the message) report the same event.
+  const hist = history && {
+    ...history,
+    undo: () => {
+      history.undo()
+      onInteraction?.('undo')
+    },
+    redo: () => {
+      history.redo()
+      onInteraction?.('redo')
+    },
+  }
 
   /* ---- columns ------------------------------------------------------------------------- */
 
@@ -315,6 +341,29 @@ export function DataGrid<R>({
     }
   }, [range, active, rowById, navRows, valueCols, lineNo])
 
+  // Flash every visible cell whose value changed since the last render, including totals-driven cells such as
+  // "Variance" that move when a number is edited, and cells changed by undo or redo.
+  useEffect(() => {
+    const next = new Map<string, CellValue>()
+    for (const id of navRows) {
+      const row = rowById.get(id)
+      if (!row) continue
+      for (const col of valueCols) next.set(`${id}|${col.id}`, col.value(row))
+    }
+    const prev = prevValues.current
+    prevValues.current = next
+    if (!prev) return
+    const changed = new Set<string>()
+    next.forEach((v, k) => {
+      if (prev.has(k) && prev.get(k) !== v) changed.add(k)
+    })
+    if (!changed.size) return
+    setFlash(changed)
+    window.clearTimeout(flashTimer.current)
+    flashTimer.current = window.setTimeout(() => setFlash(new Set()), 1200)
+  })
+  useEffect(() => () => window.clearTimeout(flashTimer.current), [])
+
   // After the keyboard moves the cursor (or an edit ends) the new cell needs real DOM focus.
   useEffect(() => {
     if (!focusAfter.current || !active || editing) return
@@ -325,6 +374,7 @@ export function DataGrid<R>({
   }, [active, editing])
 
   const select = (cell: Cell, extend: boolean) => {
+    if (extend && anchorCell && (anchorCell.r !== cell.r || anchorCell.c !== cell.c)) emit('range')
     setActive(cell)
     setAnchor(extend ? (anchorCell ?? cell) : cell)
   }
@@ -346,6 +396,49 @@ export function DataGrid<R>({
     const v = col.value(row)
     setInvalid(false)
     setEditing({ ...cell, initial: typed ?? (typeof v === 'number' ? plainNumber(v, locale) : (v ?? '')), selectAll: typed === undefined })
+  }
+
+  const describe = (col: GridColumn<R>, v: CellValue): ReactNode =>
+    typeof v === 'number' ? (col.format ? col.format(v) : String(v)) : v ? String(v) : '—'
+
+  /** The message that follows every change: what changed, with a button that really undoes it. */
+  const undoToast = (title: string, description?: ReactNode) => {
+    if (!hist) return
+    toast.push({
+      key: 'grid-history',
+      tone: 'success',
+      title,
+      description,
+      duration: 7000,
+      action: {
+        label: t.undo,
+        onClick: () => {
+          hist.undo()
+          toast.push({ key: 'grid-history', title: t.undone, duration: 5000, action: { label: t.redo, onClick: hist.redo } })
+        },
+      },
+    })
+  }
+
+  /** Every edit, paste and clear goes through here: one undo step, a message and the interaction event. */
+  const commit = (changes: CellChange[], summary?: string) => {
+    if (!onEdit || !changes.length) return
+    let detailText: ReactNode
+    if (changes.length === 1) {
+      const [change] = changes
+      const col = colById.get(change.colId)
+      const row = rowById.get(change.rowId)
+      if (col && row) {
+        detailText = (
+          <>
+            {String(nameCol.value(row) ?? '')} · {col.header}: {describe(col, col.value(row))} → {describe(col, change.value)}
+          </>
+        )
+      }
+    }
+    onEdit(changes)
+    emit('edit')
+    undoToast(summary ?? t.cellUpdated, detailText)
   }
 
   const commitEdit = (text: string, direction: CommitDirection, fromBlur: boolean): boolean => {
@@ -372,7 +465,7 @@ export function DataGrid<R>({
     } else {
       next = text
     }
-    if (next !== currentValue) onEdit?.([{ rowId: editing.r, colId: editing.c, value: next }])
+    if (next !== currentValue) commit([{ rowId: editing.r, colId: editing.c, value: next }])
 
     const ri = navIndex.get(editing.r) ?? 0
     const ci = valueCols.findIndex((c) => c.id === editing.c)
@@ -400,7 +493,7 @@ export function DataGrid<R>({
         if (col.editable && v !== 0 && v !== '') changes.push({ rowId: navRows[r], colId: col.id, value: typeof v === 'number' ? 0 : '' })
       }
     }
-    if (changes.length) onEdit(changes)
+    commit(changes, t.cellsCleared(changes.length))
   }
 
   /* ---- keyboard, copy, paste ---------------------------------------------------------------------- */
@@ -409,15 +502,15 @@ export function DataGrid<R>({
     if (editing) return
     const mod = e.metaKey || e.ctrlKey
     const key = e.key.toLowerCase()
-    if (mod && key === 'z' && history) {
+    if (mod && key === 'z' && hist) {
       e.preventDefault()
-      if (e.shiftKey) history.redo()
-      else history.undo()
+      if (e.shiftKey) hist.redo()
+      else hist.undo()
       return
     }
-    if (mod && key === 'y' && history) {
+    if (mod && key === 'y' && hist) {
       e.preventDefault()
-      history.redo()
+      hist.redo()
       return
     }
     if (!cursor) return
@@ -534,10 +627,7 @@ export function DataGrid<R>({
         changes.push({ rowId: id, colId: col.id, value: parsed })
       }),
     )
-    if (changes.length) {
-      onEdit(changes)
-      toast.push({ tone: 'success', title: t.pasted(changes.length) })
-    }
+    commit(changes, t.pasted(changes.length))
   }
 
   /* ---- toolbar state -------------------------------------------------------------------------------- */
@@ -554,8 +644,20 @@ export function DataGrid<R>({
     setSelected({})
     setPage(1)
   }
+  const changeSort = (next: SortState | null) => {
+    setSort(next)
+    if (next) emit('sort')
+  }
+  const clock = (d: Date) => {
+    try {
+      return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(d)
+    } catch {
+      return d.toLocaleTimeString()
+    }
+  }
 
   const exportCsv = () => {
+    emit('export')
     const header = visibleCols.map((c) => c.header)
     const body = sorted.map((r) =>
       visibleCols.map((c) => {
@@ -567,7 +669,7 @@ export function DataGrid<R>({
   }
   useEffect(() => {
     if (!apiRef) return
-    apiRef.current = { exportCsv }
+    apiRef.current = { exportCsv, edit: (changes) => commit(changes) }
     return () => {
       apiRef.current = null
     }
@@ -577,7 +679,11 @@ export function DataGrid<R>({
     { id: 'csv', label: t.exportCsv, icon: <Download aria-hidden="true" />, onSelect: exportCsv },
     ...(detail
       ? ([
-          { id: 'expand', label: t.expandAll, icon: <Expand aria-hidden="true" />, onSelect: () => setOpen(new Set(navRows)) },
+          { id: 'expand', label: t.expandAll, icon: <Expand aria-hidden="true" />, onSelect: () => {
+              setOpen(new Set(navRows))
+              emit('expand')
+            },
+          },
           { id: 'collapse', label: t.collapseAll, icon: <Shrink aria-hidden="true" />, onSelect: () => setOpen(new Set()) },
         ] satisfies MenuEntry[])
       : []),
@@ -598,12 +704,15 @@ export function DataGrid<R>({
   ]
 
   const groupEntries: MenuEntry[] = [
-    { id: 'none', label: t.noGrouping, icon: view.group === 'none' ? <Check aria-hidden="true" /> : <span style={{ width: '1rem' }} />, onSelect: () => patchView({ group: 'none' }) },
+    { id: 'none', label: t.noGrouping, icon: view.group === 'none' ? <Check aria-hidden="true" /> : <span style={{ width: '1rem' }} />, onSelect: () => { patchView({ group: 'none' }); emit('group') } },
     ...(groups ?? []).map((g) => ({
       id: g.id,
       label: g.label,
       icon: view.group === g.id ? <Check aria-hidden="true" /> : <span style={{ width: '1rem' }} />,
-      onSelect: () => patchView({ group: g.id }),
+      onSelect: () => {
+        patchView({ group: g.id })
+        emit('group')
+      },
     })),
   ]
 
@@ -623,6 +732,16 @@ export function DataGrid<R>({
 
   const onCellClick = (e: MouseEvent, cell: Cell) => select(cell, e.shiftKey)
 
+  // Crosshair: the row and column under the pointer light up (or, with the keyboard, the active cell's).
+  const cross: { r: string | null; c: string | null } | null = hover ?? (active && cursor ? { r: cursor.r, c: cursor.c } : null)
+  const onPointerMove = (e: ReactPointerEvent<HTMLTableElement>) => {
+    if (e.pointerType !== 'mouse') return
+    const el = (e.target as HTMLElement).closest<HTMLElement>('[data-row], [data-col]')
+    const r = el?.dataset.row ?? null
+    const c = el?.dataset.col ?? null
+    setHover((prev) => (prev?.r === r && prev?.c === c ? prev : r === null && c === null ? null : { r, c }))
+  }
+
   return (
     <div className="grid-card" data-density={view.density}>
       <div className="g-head">
@@ -632,25 +751,40 @@ export function DataGrid<R>({
         </h2>
         <div className="g-head-actions">
           {save && (
-            <span className="g-status" role="status">
-              {save.dirty && <Dot tone="warning" />}
-              {save.dirty ? t.unsaved : t.saved}
-            </span>
-          )}
-          {history && (
             <>
-              <Button variant="ghost" size="sm" icon aria-label={t.undo} title={`${t.undo} (⌘Z)`} disabled={!history.canUndo} onClick={history.undo}>
+              <span className={cn('g-status', `is-${save.status}`)} role="status" aria-live="polite">
+                {save.status === 'saving' && <span className="spinner" aria-hidden="true" />}
+                {save.status === 'saved' && <Check aria-hidden="true" />}
+                {save.status === 'unsaved' && <Dot tone="warning" />}
+                {save.status === 'saving' ? t.saving : save.status === 'unsaved' ? t.unsaved : save.savedAt ? t.savedAt(clock(save.savedAt)) : t.saved}
+              </span>
+              <span className="g-auto">
+                <span id={`${autoId}-label`}>{t.autosave}</span>
+                <button
+                  type="button"
+                  role="switch"
+                  className="switch"
+                  aria-checked={save.autosave}
+                  aria-labelledby={`${autoId}-label`}
+                  onClick={() => save.onAutosave(!save.autosave)}
+                />
+              </span>
+            </>
+          )}
+          {hist && (
+            <>
+              <Button variant="ghost" size="sm" icon aria-label={t.undo} title={`${t.undo} (⌘Z)`} disabled={!hist.canUndo} onClick={hist.undo}>
                 <Undo2 aria-hidden="true" />
               </Button>
-              <Button variant="ghost" size="sm" icon aria-label={t.redo} title={`${t.redo} (⇧⌘Z)`} disabled={!history.canRedo} onClick={history.redo}>
+              <Button variant="ghost" size="sm" icon aria-label={t.redo} title={`${t.redo} (⇧⌘Z)`} disabled={!hist.canRedo} onClick={hist.redo}>
                 <Redo2 aria-hidden="true" />
               </Button>
             </>
           )}
-          {save && (
+          {save && !save.autosave && (
             <>
               <span className="g-sep" aria-hidden="true" />
-              <Button size="sm" disabled={!save.dirty} onClick={save.onSave}>
+              <Button size="sm" disabled={save.status !== 'unsaved'} onClick={save.onSave}>
                 <Save aria-hidden="true" />
                 {t.save}
               </Button>
@@ -678,6 +812,7 @@ export function DataGrid<R>({
             onClear={clearFilters}
             onToggle={(id, value) => {
               setPage(1)
+              emit('filter')
               setSelected((prev) => {
                 const list = prev[id] ?? []
                 return { ...prev, [id]: list.includes(value) ? list.filter((v) => v !== value) : [...list, value] }
@@ -685,7 +820,7 @@ export function DataGrid<R>({
             }}
           />
         )}
-        <SortMenu columns={visibleCols} sort={sort} onChange={setSort} />
+        <SortMenu columns={visibleCols} sort={sort} onChange={changeSort} />
         {groups && groups.length > 0 && (
           <Menu
             placement="bottom-start"
@@ -702,10 +837,16 @@ export function DataGrid<R>({
         <ColumnsMenu
           columns={columns}
           hidden={view.hidden}
-          onToggle={(id) => patchView({ hidden: view.hidden.includes(id) ? view.hidden.filter((h) => h !== id) : [...view.hidden, id] })}
+          onToggle={(id) => {
+            patchView({ hidden: view.hidden.includes(id) ? view.hidden.filter((h) => h !== id) : [...view.hidden, id] })
+            emit('columns')
+          }}
           onRestore={() => patchView({ hidden: columns.filter((c) => c.hidden).map((c) => c.id) })}
         />
-        <ViewMenu density={view.density} onDensity={(density) => patchView({ density })} totals={view.totals} onTotals={(totals) => patchView({ totals })} />
+        <ViewMenu density={view.density} onDensity={(density) => {
+            patchView({ density })
+            emit('density')
+          }} totals={view.totals} onTotals={(totals) => patchView({ totals })} />
         <Menu
           entries={moreEntries}
           trigger={
@@ -752,6 +893,8 @@ export function DataGrid<R>({
           onKeyDown={onKeyDown}
           onCopy={onCopy}
           onPaste={onPaste}
+          onPointerMove={onPointerMove}
+          onPointerLeave={() => setHover(null)}
         >
           <thead>
             <tr>
@@ -782,14 +925,15 @@ export function DataGrid<R>({
                   <th
                     key={col.id}
                     scope="col"
-                    className={cn(i === 0 ? 'g-sticky g-name-col' : 'g-num', col.focus && 'is-focus')}
+                    className={cn(i === 0 ? 'g-sticky g-name-col' : 'g-num', col.focus && 'is-focus', i > 0 && cross?.c === col.id && 'is-cross-col')}
+                    data-col={i === 0 ? undefined : col.id}
                     style={{ minWidth: col.minWidth }}
                     aria-sort={on ? (sort?.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
                   >
                     <button
                       type="button"
                       className="g-sort"
-                      onClick={() => setSort(!on ? { col: col.id, dir: 'asc' } : sort?.dir === 'asc' ? { col: col.id, dir: 'desc' } : null)}
+                      onClick={() => changeSort(!on ? { col: col.id, dir: 'asc' } : sort?.dir === 'asc' ? { col: col.id, dir: 'desc' } : null)}
                     >
                       {col.header}
                       <SortIcon aria-hidden="true" className={cn(!on && 'is-idle')} />
@@ -840,7 +984,10 @@ export function DataGrid<R>({
                         className="g-toggle"
                         aria-expanded={!isCollapsed}
                         aria-label={`${isCollapsed ? t.expandGroup : t.collapseGroup}: ${item.title}`}
-                        onClick={() => toggleIn(setCollapsed, item.key)}
+                        onClick={() => {
+                          toggleIn(setCollapsed, item.key)
+                          emit('collapse')
+                        }}
                       >
                         <ChevronDown aria-hidden="true" className={cn(isCollapsed && 'is-closed')} />
                       </button>
@@ -850,7 +997,7 @@ export function DataGrid<R>({
                       <span className="g-group-count">· {t.items(item.rows.length)}</span>
                     </td>
                     {valueCols.map((col) => (
-                      <td key={col.id} className={cn('g-num g-sub', col.focus && 'is-focus')}>
+                      <td key={col.id} data-col={col.id} className={cn('g-num g-sub', col.focus && 'is-focus', cross?.c === col.id && 'is-cross-col')}>
                         {isCollapsed ? summarize(col, item.rows) : null}
                       </td>
                     ))}
@@ -867,7 +1014,7 @@ export function DataGrid<R>({
               return (
                 <Fragment key={id}>
                   <tr className={cn('g-row', isChecked && 'is-checked', rowActive && 'has-active')} aria-selected={isChecked}>
-                    <td className="g-sticky g-check-col">
+                    <td className={cn('g-sticky g-check-col', cross?.r === id && 'is-cross-row')} data-row={id}>
                       <label className="check g-check">
                         <input
                           type="checkbox"
@@ -877,7 +1024,7 @@ export function DataGrid<R>({
                         />
                       </label>
                     </td>
-                    <td className="g-sticky g-name-col">
+                    <td className={cn('g-sticky g-name-col', cross?.r === id && 'is-cross-row')} data-row={id}>
                       <div className="g-name">
                         {detail ? (
                           <button
@@ -885,7 +1032,10 @@ export function DataGrid<R>({
                             className="g-toggle"
                             aria-expanded={isOpen}
                             aria-label={`${isOpen ? t.collapseRow : t.expandRow}: ${label}`}
-                            onClick={() => toggleIn(setOpen, id)}
+                            onClick={() => {
+                              toggleIn(setOpen, id)
+                              if (!isOpen) emit('expand')
+                            }}
                           >
                             <ChevronRight aria-hidden="true" className={cn(isOpen && 'is-open')} />
                           </button>
@@ -904,6 +1054,8 @@ export function DataGrid<R>({
                           key={col.id}
                           role="gridcell"
                           data-cell={cellKey}
+                          data-row={id}
+                          data-col={col.id}
                           tabIndex={isStop && !isEditing ? 0 : -1}
                           aria-selected={isActive || inRange}
                           aria-readonly={!col.editable}
@@ -912,6 +1064,9 @@ export function DataGrid<R>({
                             typeof col.value(row) === 'number' ? 'g-num' : 'g-text',
                             col.focus && 'is-focus',
                             col.editable && 'is-editable',
+                            cross?.c === col.id && 'is-cross-col',
+                            cross?.r === id && 'is-cross-row',
+                            flash.has(cellKey) && 'is-flash',
                             inRange && !isActive && 'is-range',
                             isActive && 'is-active',
                             isEditing && 'is-editing',
@@ -958,7 +1113,7 @@ export function DataGrid<R>({
                 <td className="g-sticky g-check-col" />
                 <td className="g-sticky g-name-col">{totalLabel}</td>
                 {valueCols.map((col) => (
-                  <td key={col.id} className={cn('g-num', col.focus && 'is-focus')}>
+                  <td key={col.id} data-col={col.id} className={cn('g-num', col.focus && 'is-focus', cross?.c === col.id && 'is-cross-col')}>
                     {summarize(col, sorted)}
                   </td>
                 ))}
