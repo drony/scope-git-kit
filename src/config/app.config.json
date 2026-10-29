@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "site": {
+    "name": "Finscope",
+    "tagline": "Your money, in plain sight.",
+    "locale": "en-US",
+    "currency": "USD",
+    "weekStartsOn": 1,
+    "supportEmail": "help@finscope.example"
+  },
+  "theme": {
+    "mode": "light",
+    "colors": {
+      "light": {
+        "canvas": "#fafafa",
+        "surface": "#ffffff",
+        "soft": "#fafafa",
+        "hairline": "#f5f5f5",
+        "line": "#ebebeb",
+        "lineStrong": "#a1a1a1",
+        "ink": "#171717",
+        "body": "#4d4d4d",
+        "muted": "#666666",
+        "primary": "#171717",
+        "primaryText": "#ffffff",
+        "accent": "#0070f3",
+        "success": "#0cce6b",
+        "warning": "#f5a623",
+        "error": "#ee0000",
+        "terminal": "#171717"
+      },
+      "dark": {
+        "canvas": "#0a0a0a",
+        "surface": "#111111",
+        "soft": "#0d0d0d",
+        "hairline": "#1a1a1a",
+        "line": "#262626",
+        "lineStrong": "#5c5c5c",
+        "ink": "#ededed",
+        "body": "#a1a1a1",
+        "muted": "#8f8f8f",
+        "primary": "#ededed",
+        "primaryText": "#0a0a0a",
+        "accent": "#3291ff",
+        "success": "#0cce6b",
+        "warning": "#f5a623",
+        "error": "#ff5c5c",
+        "terminal": "#000000"
+      }
+    },
+    "gradient": ["#007cf0", "#00dfd8", "#7928ca", "#ff0080", "#ff4d4d", "#f9cb28"],
+    "chart": ["#0070f3", "#7928ca", "#00b8b0", "#ff0080", "#f5a623"],
+    "style": {
+      "radius": 10,
+      "shell": 1152,
+      "shellWide": 1440,
+      "navHeight": 104,
+      "shadow": "soft",
+      "font": "geist"
+    }
+  }
+}

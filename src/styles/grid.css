@@ -1,0 +1,629 @@
+/* ==========================================================================
+   Data grid (finance tables): toolbar, sticky header and first columns,
+   grouped rows, editable cells, totals row, footer.
+   Colors come from the theme variables, so the Theme & settings screen restyles it.
+   ========================================================================== */
+
+.grid-card {
+  --c0: 2.75rem; /* width of the checkbox column; the name column sticks right after it */
+  --g-pad-y: 0.6875rem;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  min-width: 0;
+}
+.grid-card[data-density='compact'] {
+  --g-pad-y: 0.3125rem;
+}
+
+/* ---- header + toolbar ---- */
+
+.g-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+.g-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  font-size: 1.125rem;
+  letter-spacing: -0.02em;
+}
+.g-unit {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.g-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.g-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.g-sep {
+  width: 1px;
+  height: 1.25rem;
+  background: var(--line);
+  margin-inline: 0.25rem;
+  flex: none;
+}
+
+.g-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+.g-search {
+  width: 16rem;
+  max-width: 100%;
+}
+.g-search .input {
+  height: 2.0625rem;
+  font-size: 0.8125rem;
+}
+.g-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding-inline: 0.3125rem;
+  border-radius: 4px;
+  background: var(--hairline);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--ink);
+}
+
+.g-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+.g-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.25rem 0.25rem 0.625rem;
+  border-radius: var(--radius-sm);
+  background: var(--hairline);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 0.8125rem;
+  color: var(--ink);
+}
+.g-chip button {
+  display: grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 4px;
+  color: var(--muted);
+}
+.g-chip button:hover {
+  background: var(--line);
+  color: var(--ink);
+}
+.g-chip svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+.g-clear {
+  font-size: 0.8125rem;
+  color: var(--ink);
+  text-decoration: underline 1px;
+  text-underline-offset: 3px;
+  padding: 0.25rem 0.5rem;
+}
+.g-clear:hover {
+  color: var(--accent);
+}
+
+/* ---- menus (popovers) ---- */
+
+.g-pop {
+  display: grid;
+  gap: 0.75rem;
+  width: 17.5rem;
+  max-width: calc(100vw - 1.5rem);
+  padding: 0.875rem;
+}
+.g-pop .input {
+  height: 2.0625rem;
+  font-size: 0.8125rem;
+}
+.g-pop-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.g-legend {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  padding: 0;
+}
+.g-fieldset {
+  display: grid;
+  gap: 0.5rem;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.g-list {
+  display: grid;
+  gap: 1px;
+  margin-inline: -0.25rem;
+}
+.g-list .option {
+  width: 100%;
+  text-align: left;
+}
+.g-collist {
+  display: grid;
+  gap: 0.125rem;
+  max-height: 16rem;
+  overflow-y: auto;
+  margin-inline: -0.25rem;
+}
+.g-collist li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3125rem 0.25rem;
+  border-radius: var(--radius-sm);
+}
+.g-collist li:hover {
+  background: var(--hairline);
+}
+.g-collist li svg {
+  color: var(--muted);
+  flex: none;
+}
+.g-pop-foot {
+  display: flex;
+  justify-content: flex-start;
+  padding-top: 0.625rem;
+  margin: 0 -0.875rem -0.375rem;
+  padding-inline: 0.5rem;
+  border-top: 1px solid var(--line);
+}
+
+/* ---- the table ---- */
+
+.g-scroll {
+  overflow: auto;
+  max-height: min(38rem, 78vh);
+  position: relative;
+}
+.g-table {
+  width: 100%;
+  min-width: max-content;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+.g-table th,
+.g-table td {
+  padding: var(--g-pad-y) 1rem;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--g-bg, var(--surface));
+  white-space: nowrap;
+  text-align: left;
+  color: var(--body);
+}
+.g-table tr {
+  --g-bg: var(--surface);
+}
+
+/* header */
+.g-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding-block: 0.625rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  font-weight: 500;
+  color: var(--ink);
+}
+.g-table thead th.g-num {
+  text-align: right;
+  border-left: 1px solid var(--hairline);
+}
+.g-table thead th.is-focus {
+  box-shadow: inset 0 2px 0 var(--accent);
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+}
+.g-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font: inherit;
+  color: inherit;
+  border-radius: 4px;
+}
+.g-sort:hover {
+  color: var(--accent);
+}
+.g-sort svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+.g-sort svg.is-idle {
+  opacity: 0;
+  transition: opacity 0.12s var(--ease);
+}
+.g-sort:hover svg.is-idle,
+.g-sort:focus-visible svg.is-idle {
+  opacity: 0.55;
+}
+.g-pin {
+  display: inline-block; /* the global svg rule makes icons block-level */
+  margin-left: 0.5rem;
+  color: var(--muted);
+  vertical-align: -2px;
+}
+
+/* sticky first columns */
+.g-sticky {
+  position: sticky;
+  z-index: 2;
+}
+.g-check-col {
+  left: 0;
+  width: var(--c0);
+  min-width: var(--c0);
+  max-width: var(--c0);
+  padding-inline: 0 !important;
+  text-align: center !important;
+}
+.g-name-col {
+  left: var(--c0);
+  min-width: 14rem;
+  box-shadow: 1px 0 0 var(--line);
+}
+@media (width <= 640px) {
+  .g-name-col {
+    min-width: 9.5rem;
+  }
+  .g-head,
+  .g-toolbar,
+  .g-foot,
+  .g-chips {
+    padding-inline: 1rem;
+  }
+}
+.g-table thead th.g-sticky {
+  z-index: 5;
+}
+.g-table thead th.g-name-col {
+  box-shadow: 1px 0 0 var(--line);
+}
+/* Block-level flex: an inline label would sit on the text baseline and look raised. */
+.g-check {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  min-height: 1.375rem;
+}
+.g-check input {
+  margin: 0;
+}
+
+/* rows */
+.g-row:hover {
+  --g-bg: var(--soft);
+}
+.g-row.is-checked {
+  --g-bg: color-mix(in srgb, var(--accent) 6%, var(--surface));
+}
+.g-row.has-active .g-check-col {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.g-name {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--ink);
+}
+.g-name > span {
+  min-width: 0;
+}
+.g-toggle {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-left: -0.25rem;
+  border-radius: 4px;
+  color: var(--muted);
+  flex: none;
+}
+.g-toggle:hover {
+  background: var(--hairline);
+  color: var(--ink);
+}
+.g-toggle svg {
+  width: 1rem;
+  height: 1rem;
+  transition: transform 0.15s var(--ease);
+}
+.g-toggle svg.is-open {
+  transform: rotate(90deg);
+}
+.g-toggle svg.is-closed {
+  transform: rotate(-90deg);
+}
+.g-name .g-toggle + span {
+  margin-left: 0.25rem;
+}
+
+/* group heading rows */
+.g-group {
+  --g-bg: var(--soft);
+}
+.g-group td {
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+.g-group-title {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink);
+}
+.g-group-count {
+  margin-left: 0.5rem;
+  color: var(--muted);
+}
+.g-group .g-sub {
+  text-align: right;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* value cells */
+.g-table td.g-num {
+  text-align: right;
+  border-left: 1px solid var(--hairline);
+}
+.g-cell {
+  cursor: cell;
+  user-select: none;
+  color: var(--ink);
+}
+.g-cell.g-text {
+  color: var(--body);
+  max-width: 22rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.g-cell.is-focus,
+.g-table td.is-focus {
+  background: color-mix(in srgb, var(--accent) 4%, var(--g-bg, var(--surface)));
+}
+/* Same specificity as the focus-column tint above (td.is-focus), and later, so selection wins. */
+.g-table td.g-cell.is-range {
+  background: var(--accent-soft);
+}
+.g-table td.g-cell.is-active {
+  background: var(--surface);
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.g-cell:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: 0;
+}
+.g-cell.is-editing {
+  padding: 0;
+  background: var(--surface);
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.g-input {
+  display: block;
+  width: 100%;
+  min-width: 0; /* the cell's own min-width sets the column size, so editing never resizes it */
+  height: 100%;
+  padding: var(--g-pad-y) 1rem;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.g-input.is-right {
+  text-align: right;
+}
+.g-cell.is-editing:has(.g-input.is-invalid) {
+  outline-color: var(--error);
+  background: var(--error-soft);
+}
+
+/* totals */
+.g-total td {
+  --g-bg: var(--soft);
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 0;
+  font-weight: 600;
+  color: var(--ink);
+}
+.g-total td.g-sticky {
+  z-index: 2;
+}
+.g-total td.g-num {
+  text-align: right;
+}
+
+/* expanded detail */
+.g-detail-row td {
+  --g-bg: var(--soft);
+  padding: 0;
+  background: var(--soft);
+}
+.g-detail {
+  position: sticky;
+  left: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
+  gap: 1.5rem 2.5rem;
+  align-items: center;
+  width: min(100%, 70rem);
+  padding: 1rem 1.25rem 1.125rem 3.5rem;
+  white-space: normal;
+}
+@media (width <= 720px) {
+  .g-detail {
+    grid-template-columns: 1fr;
+    padding-left: 1.25rem;
+  }
+}
+.g-detail dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.75rem 1.5rem;
+}
+.g-detail dt {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.g-detail dd {
+  color: var(--ink);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.g-empty {
+  padding: 0 !important;
+  white-space: normal !important;
+  text-align: center !important;
+}
+
+/* ---- footer ---- */
+
+.g-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.5rem;
+  padding: 0.625rem 1.25rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.g-selection {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+}
+.g-selection b {
+  color: var(--ink);
+  font-weight: 500;
+}
+.g-pager {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.g-range {
+  margin-right: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--ink);
+}
+.g-size {
+  width: 8.5rem;
+  margin-left: 0.5rem;
+}
+.g-size .input {
+  height: 2rem;
+  font-size: 0.8125rem;
+}
+
+.grid-hint {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* page header used above the tables */
+.table-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+}
+.table-head h1 {
+  font-size: clamp(1.875rem, 1.3rem + 2vw, 2.75rem);
+  margin-top: 1rem;
+}
+.table-head .lead {
+  margin-top: 0.625rem;
+}
+.table-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.table-head-actions .select-trigger {
+  min-width: 10.5rem;
+}
+
+.g-pos {
+  color: var(--success-text);
+}
+.g-neg {
+  color: var(--error);
+}
+
+/* detail panel pieces */
+.g-spark {
+  display: grid;
+  gap: 0.375rem;
+}
+.g-spark .eyebrow {
+  margin: 0;
+}

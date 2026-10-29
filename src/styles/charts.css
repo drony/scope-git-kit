@@ -1,0 +1,223 @@
+/* ==========================================================================
+   Charts. Colors come from --chart-1..5, --success, --error and the
+   neutral tokens, so they follow the Theme & Settings screen.
+   ========================================================================== */
+
+.chart {
+  position: relative;
+  width: 100%;
+}
+.chart svg {
+  display: block;
+  overflow: visible;
+  outline: none;
+}
+.chart svg:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+.chart-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+.chart-tick {
+  font-family: var(--mono);
+  font-size: 10px;
+  fill: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.chart-cross {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+.chart-dot {
+  fill: var(--surface);
+  stroke-width: 2;
+}
+.chart-band {
+  fill: var(--hairline);
+}
+.chart-tip {
+  position: absolute;
+  z-index: 5;
+  min-width: 9.5rem;
+  padding: 0.5rem 0.625rem;
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lift);
+  font-size: 0.75rem;
+  pointer-events: none;
+}
+.chart-tip.is-fixed {
+  position: fixed;
+  z-index: 100;
+  min-width: 0;
+}
+.chart-tip-title {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+.chart-tip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  line-height: 1.6;
+}
+.chart-tip-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--body);
+}
+.chart-tip-row i {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 2px;
+  flex: none;
+}
+.chart-tip-row b {
+  font-family: var(--mono);
+  font-weight: 500;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 1rem;
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--body);
+}
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--body);
+}
+.legend i {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 2px;
+}
+
+/* donut */
+.donut {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem 2rem;
+  flex-wrap: wrap;
+}
+.donut-chart {
+  position: relative;
+  flex: none;
+}
+.donut-track {
+  stroke: var(--hairline);
+}
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  gap: 0.125rem;
+  pointer-events: none;
+  padding: 1.5rem;
+}
+.donut-center strong {
+  font-size: 1.25rem;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.legend-list {
+  flex: 1;
+  min-width: 14rem;
+  display: grid;
+}
+.legend-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.25rem;
+  border-bottom: 1px solid var(--hairline);
+  font-size: 0.8125rem;
+  color: var(--ink);
+  border-radius: 4px;
+  transition: background 0.1s var(--ease);
+}
+.legend-list li:last-child {
+  border-bottom: 0;
+}
+.legend-list li.is-active {
+  background: var(--soft);
+}
+.legend-list i {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 2px;
+}
+.legend-list b {
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+.legend-list .mono {
+  font-size: 0.6875rem;
+}
+
+/* heatmap */
+.heat {
+  min-width: 0;
+  max-width: 100%;
+}
+.heat-scroll {
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+.heat-grid {
+  display: flex;
+  gap: 3px;
+  width: max-content;
+}
+.heat-col {
+  display: grid;
+  gap: 3px;
+}
+.heat-cell {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 3px;
+}
+.heat-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.heat-legend i {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 3px;
+}
+.heat-legend span:first-child {
+  margin-right: 0.25rem;
+}
+.heat-legend span:last-child {
+  margin-left: 0.25rem;
+}
