@@ -85,6 +85,21 @@ export const uiDocs: ComponentDoc[] = [
 <Kbd>⌘K</Kbd>`,
   },
   {
+    id: 'star-button',
+    name: 'StarButton',
+    group: 'ui',
+    summary: 'A star toggle for favorites and watchlists. Safe inside clickable rows: it does not trigger the row.',
+    source: 'kit/components/ui/StarButton.tsx',
+    props: [
+      prop('pressed', 'boolean', 'Whether the item is starred.', { required: true }),
+      prop('onToggle', '() => void', 'Called when it is clicked.', { required: true }),
+      prop('label', 'string', 'Accessible name, e.g. "Add AAPL to your watchlist".', { required: true }),
+      prop('size', 'number', 'Icon size in px.', { default: '16' }),
+    ],
+    example: `<StarButton pressed={watch.has(symbol)} onToggle={() => watch.toggle(symbol)} label={'Watch ' + symbol} />`,
+    notes: ['Renders `aria-pressed`. Pair it with `useStoredSet` to keep the choice across pages and reloads.'],
+  },
+  {
     id: 'card',
     name: 'Card, CardHead, Kpi',
     group: 'ui',

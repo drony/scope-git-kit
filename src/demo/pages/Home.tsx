@@ -7,6 +7,7 @@ import { useFormat } from '@/kit/lib/format'
 import { ASSETS, assetStats, eventsForMonth, portfolioSeries } from '@/demo/seed/market'
 import { asset } from '@/kit/lib/asset'
 import { toKey, today } from '@/kit/lib/date'
+import { useWatchlist } from '@/demo/hooks/useWatchlist'
 import { usePageTitle } from '@/kit/hooks/usePageTitle'
 import { Button, ButtonLink } from '@/kit/components/ui/Button'
 import { Delta } from '@/kit/components/ui/Badge'
@@ -290,7 +291,7 @@ function ScreenSection() {
 
 function Movers() {
   const fmt = useFormat()
-  const [watched, setWatched] = useState<Set<string>>(new Set(['NVDA']))
+  const watchlist = useWatchlist()
   const movers = useMemo(
     () =>
       ASSETS.map((a) => ({ a, s: assetStats(a) }))
@@ -298,12 +299,6 @@ function Movers() {
         .slice(0, 5),
     [],
   )
-  const toggle = (symbol: string) =>
-    setWatched((prev) => {
-      const next = new Set(prev)
-      if (!next.delete(symbol)) next.add(symbol)
-      return next
-    })
 
   return (
     <Section>
@@ -343,8 +338,8 @@ function Movers() {
                   <br />
                   <Delta value={s.change1d} />
                 </span>
-                <button type="button" className={watched.has(a.symbol) ? 'watch-btn is-on' : 'watch-btn'} aria-pressed={watched.has(a.symbol)} onClick={() => toggle(a.symbol)}>
-                  {watched.has(a.symbol) ? 'Watching' : 'Watch'}
+                <button type="button" className={watchlist.has(a.symbol) ? 'watch-btn is-on' : 'watch-btn'} aria-pressed={watchlist.has(a.symbol)} onClick={() => watchlist.toggle(a.symbol)}>
+                  {watchlist.has(a.symbol) ? 'Watching' : 'Watch'}
                 </button>
               </li>
             ))}

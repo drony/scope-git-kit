@@ -7,7 +7,7 @@ src/
   kit/                 Reusable design system. Copy this folder into another project.
     components/        ui, forms, nav, overlays, data, grid, charts, calendar, media, theme
     context/           ConfigProvider (theme + site settings), ToastProvider
-    hooks/             useHistory, useAutosave, useEditStore, useTryList, useCopy, useMedia, usePageTitle
+    hooks/             useHistory, useAutosave, useEditStore, useStoredSet, useTryList, useCopy, useMedia, usePageTitle
     lib/               cn, date, format, i18n, storage, asset, edits, random
     theme/             Configuration schema, defaults, presets, and the function that applies a theme
     styles/            Design tokens and the CSS for every component family
@@ -18,6 +18,7 @@ src/
     components/        Demo-only compositions (pricing section, auth layout, theme preview)
     config/            Navigation structure and which pages use the wide layout
     context/           A fake auth provider
+    hooks/             Demo-only hooks, e.g. the shared watchlist (built on the kit's useStoredSet)
     seed/              Fictional data. The only place numbers and names are invented.
     styles/            Header, footer and page layouts
   config/              This project's settings: app.config.json and the object built from it
@@ -62,6 +63,12 @@ Stylesheets only read variables. Unsaved edits made in the theme editor are kept
 `demo/config/pages.ts` lists the routes that use the wide layout. The `Layout` component sets `data-width="wide"` on
 `<html>`, and `--shell-active` switches between the regular and wide width. Header, footer and every `.container`
 follow, so their edges always line up.
+
+## Linking components
+
+Components stay independent and are linked by the page through props: the dashboard holds the hovered asset class in state, passes it
+to `DonutChart` (`activeId`, `onActiveChange`) and to `DataTable` (`rowClassName`, `onRowHover`), and each highlights its part.
+`useStoredSet` shares a persistent set (the watchlist) between pages the same way. Nothing in the kit knows about the other side.
 
 ## Editing, undo and autosave
 

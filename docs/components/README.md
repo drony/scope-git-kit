@@ -14,6 +14,7 @@ Buttons, badges, cards, feedback and page scaffolding.
 - **Badge**: A bordered pill with an optional icon, for short facts such as "Read-only access".
 - **Delta**: A signed percentage colored green, red or grey. Uses the locale from the theme config.
 - **Dot, Eyebrow, Kbd**: Three tiny pieces: a status dot, the mono uppercase label above headings, and a keyboard key.
+- **StarButton**: A star toggle for favorites and watchlists. Safe inside clickable rows: it does not trigger the row.
 - **Card, CardHead, Kpi**: The raised surface, its header row, and a labelled figure for dashboards.
 - **Alert**: An inline message in four tones.
 - **Meter**: A thin progress bar.
@@ -55,6 +56,7 @@ Tabs, segmented control, accordion, breadcrumbs, pagination, stepper and the meg
 Popover, tooltip, menu, modal and drawer.
 
 - **Popover**: A floating panel anchored to a trigger. It flips and shifts to stay on screen. The base for date pickers and the grid menus.
+- **HoverCard**: A richer preview that opens when the pointer rests on something (or it gets keyboard focus): a mini chart, a few facts.
 - **Tooltip**: A short label shown on hover and keyboard focus.
 - **Menu**: A dropdown of actions with arrow-key navigation.
 - **Modal**: A centered dialog that traps focus and locks page scroll.
@@ -116,7 +118,8 @@ Configuration, toasts, undo/redo, autosave, formatting and helpers.
 - **useHistory**: State with undo and redo. Every `set` that changes the value is one undo step (100 are kept).
 - **useAutosave**: Debounced autosave with a visible status and an on/off preference remembered in this browser.
 - **useEditStore**: Everything an editable table needs besides its rows: edits loaded from this browser, undo and redo, autosave, and props for DataGrid.
-- **useTryList**: State for a “Try it” checklist: which steps are done, and whether the card is shown (remembered in this browser).
+- **useStoredSet**: A set of strings (ids, symbols) kept in this browser and shared across the app: change it in one place and every component reading the same key updates.
+- **useTryList**: State for a “Try it” checklist: which steps are done, and whether the card is shown (remembered in this browser). Works with DataGrid events or with events you define yourself.
 - **useCopy**: Copies text to the clipboard (with a fallback) and reports a temporary “copied” state.
 - **useMedia**: Tracks a CSS media query.
 - **usePageTitle**: Sets the document title to “Page · Site name”, or “Site name: tagline” without a title.

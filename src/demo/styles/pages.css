@@ -537,3 +537,30 @@
   border-radius: 999px;
   background: var(--line-strong);
 }
+
+/* ---- asset peek (hover card on Markets) ----------------------------------------------------- */
+
+.peek-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem 0.75rem;
+}
+.peek-stats .peek-wide {
+  grid-column: 1 / -1;
+}
+.peek-stats dt {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.peek-stats dd {
+  color: var(--ink);
+  font-size: 0.8125rem;
+}
+
+/* the star column of the Markets table */
+.tbl td .star-btn {
+  margin-inline: auto;
+}

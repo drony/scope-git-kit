@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Download, Inbox } from 'lucide-react'
+import { Download, Inbox, Sparkles } from 'lucide-react'
 import { useAuth } from '@/demo/context/AuthContext'
 import { useToast } from '@/kit/context/ToastContext'
 import { useFormat } from '@/kit/lib/format'
 import { addDays, today, type DateRange } from '@/kit/lib/date'
-import { CASH, allocation, cashFlow, dailyPnl, holdingRows, portfolioSeries, transactions, type HoldingRow, type Transaction } from '@/demo/seed/market'
+import { CASH, CLASS_LABELS, allocation, cashFlow, dailyPnl, holdingRows, portfolioSeries, transactions, type HoldingRow, type Transaction } from '@/demo/seed/market'
 import { usePageTitle } from '@/kit/hooks/usePageTitle'
 import { Button } from '@/kit/components/ui/Button'
 import { Chip, Delta, Tag } from '@/kit/components/ui/Badge'
@@ -13,6 +13,8 @@ import { AssetIcon } from '@/kit/components/ui/AssetIcon'
 import { Card, Kpi } from '@/kit/components/ui/Card'
 import { EmptyState } from '@/kit/components/ui/Feedback'
 import { Reveal } from '@/kit/components/ui/Reveal'
+import { TryList, type TryTask } from '@/kit/components/grid/TryList'
+import { useTryList } from '@/kit/hooks/useTryList'
 import { Tabs } from '@/kit/components/nav/Tabs'
 import { Pagination } from '@/kit/components/nav/Pagination'
 import { DataTable, type Column } from '@/kit/components/data/DataTable'
@@ -27,15 +29,21 @@ import { Select } from '@/kit/components/forms/Select'
 
 const PAGE_SIZE = 8
 
+/** What a visitor can do on this page; each one ticks a step of the "Try it" list. */
+type DashEvent = 'range' | 'bench' | 'chart' | 'donut' | 'sort' | 'activity'
+const EVENT_TASKS: Record<DashEvent, string> = { range: 'range', bench: 'bench', chart: 'chart', donut: 'donut', sort: 'sort', activity: 'activity' }
+
 function greeting() {
   const h = new Date().getHours()
   return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'
 }
 
-function HoldingsTable() {
+function HoldingsTable({ linked, onLinked, onSort }: { linked: string | null; onLinked: (id: string | null) => void; onSort: () => void }) {
   const fmt = useFormat()
   const navigate = useNavigate()
   const rows = useMemo(holdingRows, [])
+  /** The allocation slice a holding belongs to; it matches the donut's slice ids. */
+  const classId = (r: HoldingRow) => CLASS_LABELS[r.cls].toLowerCase()
 
   const columns: Column<HoldingRow>[] = [
     {
@@ -68,6 +76,9 @@ function HoldingsTable() {
       rowKey={(r) => r.symbol}
       initialSort={{ key: 'value', dir: 'desc' }}
       onRowClick={(r) => navigate(`/markets/${r.symbol}`)}
+      rowClassName={(r) => (linked === classId(r) ? 'is-linked' : undefined)}
+      onRowHover={(r) => onLinked(r ? classId(r) : null)}
+      onSortChange={(sort) => sort && onSort()}
     />
   )
 }
@@ -168,6 +179,9 @@ export default function Dashboard() {
   const [range, setRange] = useState<DateRange>(() => ({ from: addDays(today(), -89), to: today() }))
   const [showBench, setShowBench] = useState(true)
   const [tab, setTab] = useState('holdings')
+  /** The asset class under the pointer, in the donut or in the holdings table. Both highlight it. */
+  const [linked, setLinked] = useState<string | null>(null)
+  const tryout = useTryList<DashEvent>('finscope.try.dashboard', EVENT_TASKS)
 
   const full = useMemo(() => portfolioSeries(365), [])
   const slice = useMemo(() => {
@@ -193,6 +207,15 @@ export default function Dashboard() {
 
   const firstName = user?.name.split(' ')[0]
 
+  const tasks: TryTask[] = [
+    { id: 'range', title: 'Change the date range', hint: 'Open the range picker at the top and choose Last 30 days or two dates of your own.' },
+    { id: 'bench', title: 'Compare with the S&P 500', hint: 'Switch the S&P 500 chip on the performance chart off and on.' },
+    { id: 'chart', title: 'Read the chart', hint: 'Hover the performance chart, or focus it and press the arrow keys.' },
+    { id: 'donut', title: 'Link the donut and the table', hint: 'Hover a slice of the allocation donut: the matching holdings light up. Hover a holding to light up its slice.' },
+    { id: 'sort', title: 'Sort the holdings', hint: 'Click a column title such as Return or Value in the table at the bottom.' },
+    { id: 'activity', title: 'Open the Activity tab', hint: 'Switch to Activity, then search or filter the transactions.' },
+  ]
+
   return (
     <>
       <section className="page-bar">
@@ -205,8 +228,22 @@ export default function Dashboard() {
               <h1 style={{ fontSize: 'clamp(1.75rem, 1.3rem + 1.7vw, 2.375rem)' }}>{firstName ? `${greeting()}, ${firstName}` : 'Portfolio overview'}</h1>
             </div>
             <div className="row wrap">
+              <Button variant="ghost" aria-expanded={tryout.open} onClick={() => tryout.setOpen(!tryout.open)}>
+                <Sparkles aria-hidden="true" />
+                Try it
+                <span className="g-badge">
+                  {tryout.done.size}/{tasks.length}
+                </span>
+              </Button>
               <div className="range-field">
-                <DateRangePicker value={range} onChange={setRange} ariaLabel="Date range" />
+                <DateRangePicker
+                  value={range}
+                  onChange={(r) => {
+                    setRange(r)
+                    tryout.mark('range')
+                  }}
+                  ariaLabel="Date range"
+                />
               </div>
               <Button variant="ghost" onClick={() => toast.push({ tone: 'success', title: 'Export started', description: 'We will email you a CSV in a minute.' })}>
                 <Download aria-hidden="true" />
@@ -219,6 +256,17 @@ export default function Dashboard() {
 
       <section className="section dash-section">
         <div className="container stack-lg">
+          {tryout.open && (
+            <TryList
+              heading="Try the dashboard"
+              tasks={tasks}
+              done={tryout.done}
+              allDoneText="You have tried everything. Charts, tables and the donut are all linked."
+              closeLabel="Hide"
+              onClose={() => tryout.setOpen(false)}
+            />
+          )}
+
           <Reveal className="lattice lattice-4">
             <Kpi label="Net worth" value={fmt.money(last, 0)} sub={<><Delta value={first ? (last / first - 1) * 100 : 0} /> in this range</>} />
             <Kpi label="Gain / loss" value={fmt.moneySigned(last - first, 0)} sub="Over the selected range" />
@@ -235,7 +283,10 @@ export default function Dashboard() {
                     <Chip mark="P" markColor="var(--chart-1)" pressed>
                       Portfolio
                     </Chip>
-                    <Chip mark="S" markColor="var(--muted)" pressed={showBench} onClick={() => setShowBench((s) => !s)}>
+                    <Chip mark="S" markColor="var(--muted)" pressed={showBench} onClick={() => {
+                        setShowBench((v) => !v)
+                        tryout.mark('bench')
+                      }}>
                       S&P 500
                     </Chip>
                   </div>
@@ -243,6 +294,7 @@ export default function Dashboard() {
                 {slice.portfolio.length > 1 ? (
                   <AreaChart
                     ariaLabel="Portfolio value over the selected range"
+                    onHover={() => tryout.mark('chart')}
                     height={300}
                     formatY={(n) => fmt.moneyCompact(n)}
                     formatX={(d) => fmt.date(d, 'day')}
@@ -267,6 +319,11 @@ export default function Dashboard() {
                   centerValue={fmt.moneyCompact(slices.reduce((s, x) => s + x.value, 0))}
                   formatValue={(n) => fmt.money(n, 0)}
                   size={168}
+                  activeId={linked}
+                  onActiveChange={(id) => {
+                    setLinked(id)
+                    if (id) tryout.mark('donut')
+                  }}
                 />
               </Card>
             </Reveal>
@@ -306,12 +363,15 @@ export default function Dashboard() {
             <Tabs
               ariaLabel="Portfolio details"
               value={tab}
-              onChange={setTab}
+              onChange={(id) => {
+                setTab(id)
+                if (id === 'activity') tryout.mark('activity')
+              }}
               items={[
                 { id: 'holdings', label: 'Holdings', count: holdingRows().length },
                 { id: 'activity', label: 'Activity' },
               ]}
-              panels={{ holdings: <HoldingsTable />, activity: <ActivityTable /> }}
+              panels={{ holdings: <HoldingsTable linked={linked} onLinked={setLinked} onSort={() => tryout.mark('sort')} />, activity: <ActivityTable /> }}
             />
           </Reveal>
         </div>

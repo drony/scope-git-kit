@@ -4,7 +4,7 @@
 
 Buttons, badges, cards, feedback and page scaffolding.
 
-[Button](#button) · [Tag](#tag) · [Chip](#chip) · [Badge](#badge) · [Delta](#delta) · [Dot, Eyebrow, Kbd](#dot-eyebrow-kbd) · [Card, CardHead, Kpi](#card-cardhead-kpi) · [Alert](#alert) · [Meter](#meter) · [Skeleton](#skeleton) · [EmptyState](#emptystate) · [Avatar, AvatarGroup](#avatar-avatargroup) · [Terminal, CopyButton](#terminal-copybutton) · [Section, SectionHead, PageHero](#section-sectionhead-pagehero) · [Reveal](#reveal) · [AssetIcon](#asseticon)
+[Button](#button) · [Tag](#tag) · [Chip](#chip) · [Badge](#badge) · [Delta](#delta) · [Dot, Eyebrow, Kbd](#dot-eyebrow-kbd) · [StarButton](#starbutton) · [Card, CardHead, Kpi](#card-cardhead-kpi) · [Alert](#alert) · [Meter](#meter) · [Skeleton](#skeleton) · [EmptyState](#emptystate) · [Avatar, AvatarGroup](#avatar-avatargroup) · [Terminal, CopyButton](#terminal-copybutton) · [Section, SectionHead, PageHero](#section-sectionhead-pagehero) · [Reveal](#reveal) · [AssetIcon](#asseticon)
 
 ### Button
 
@@ -127,6 +127,27 @@ import { Dot, Eyebrow, Kbd } from '@/kit/components/ui/Badge'
 <span><Dot tone="warning" /> Unsaved</span>
 <Kbd>⌘K</Kbd>
 ```
+
+### StarButton
+
+A star toggle for favorites and watchlists. Safe inside clickable rows: it does not trigger the row.
+
+```ts
+import { StarButton } from '@/kit/components/ui/StarButton'
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `pressed` *(required)* | `boolean` |  | Whether the item is starred. |
+| `onToggle` *(required)* | `() => void` |  | Called when it is clicked. |
+| `label` *(required)* | `string` |  | Accessible name, e.g. "Add AAPL to your watchlist". |
+| `size` | `number` | `16` | Icon size in px. |
+
+```tsx
+<StarButton pressed={watch.has(symbol)} onToggle={() => watch.toggle(symbol)} label={'Watch ' + symbol} />
+```
+
+- Renders `aria-pressed`. Pair it with `useStoredSet` to keep the choice across pages and reloads.
 
 ### Card, CardHead, Kpi
 

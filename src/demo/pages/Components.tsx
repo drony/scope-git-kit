@@ -8,6 +8,7 @@ import { asset } from '@/kit/lib/asset'
 import { usePageTitle } from '@/kit/hooks/usePageTitle'
 import { Button } from '@/kit/components/ui/Button'
 import { Avatar, AvatarGroup } from '@/kit/components/ui/Avatar'
+import { StarButton } from '@/kit/components/ui/StarButton'
 import { Chip, Delta, Dot, Kbd, Tag } from '@/kit/components/ui/Badge'
 import { Card } from '@/kit/components/ui/Card'
 import { Alert, EmptyState, Meter, Skeleton } from '@/kit/components/ui/Feedback'
@@ -44,6 +45,7 @@ import { Drawer } from '@/kit/components/overlays/Drawer'
 import { Menu } from '@/kit/components/overlays/Menu'
 import { Modal } from '@/kit/components/overlays/Modal'
 import { Popover } from '@/kit/components/overlays/Popover'
+import { HoverCard } from '@/kit/components/overlays/HoverCard'
 import { Tooltip } from '@/kit/components/overlays/Tooltip'
 
 const SECTIONS = [
@@ -85,6 +87,7 @@ function Demo({ title, children, wide }: { title: string; children: ReactNode; w
 
 function Buttons() {
   const [pressed, setPressed] = useState(true)
+  const [starred, setStarred] = useState(false)
   return (
     <Block id="buttons" title="Buttons & badges" lead="Sizes and variants share the radius, weight and arrow from ascope.app.">
       <Demo title="Variants">
@@ -127,6 +130,7 @@ function Buttons() {
           <Tag tone="warning">Warning</Tag>
           <Tag tone="error">Error</Tag>
           <Kbd>⌘K</Kbd>
+          <StarButton pressed={starred} onToggle={() => setStarred((v) => !v)} label="Favorite" />
           <span className="row" style={{ gap: '0.375rem' }}>
             <Dot /> Live
           </span>
@@ -333,6 +337,9 @@ function Overlays() {
               <Copy aria-hidden="true" />
             </Button>
           </Tooltip>
+          <HoverCard content={<p>Rest the pointer here and a card like this appears. Move onto it and it stays.</p>}>
+            <Button variant="ghost">Hover card</Button>
+          </HoverCard>
           <Popover
             trigger={
               <Button variant="ghost">

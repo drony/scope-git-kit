@@ -350,3 +350,17 @@
     right: 0.25rem;
   }
 }
+
+/* hover card */
+.hovercard-ref {
+  display: inline-block;
+  max-width: 100%;
+}
+.hovercard {
+  width: 17rem;
+  max-width: calc(100vw - 1.5rem);
+  padding: 0.875rem;
+  display: grid;
+  gap: 0.625rem;
+  font-size: 0.8125rem;
+}

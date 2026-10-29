@@ -1,13 +1,12 @@
 import { useCallback, useState } from 'react'
 import { storage } from '@/kit/lib/storage'
-import type { GridEvent } from '@/kit/components/grid/types'
 
 /**
  * State for a "Try it" checklist: which steps are done and whether the list is shown.
- * `eventToTask` maps what the grid reports (edit, sort, …) to the step it completes.
+ * `eventToTask` maps an event (what a DataGrid reports, or anything you define) to the step it completes.
  * Pass a constant defined outside the component so the callbacks stay stable.
  */
-export function useTryList(storageKey: string, eventToTask: Partial<Record<GridEvent, string>>) {
+export function useTryList<E extends string = string>(storageKey: string, eventToTask: Partial<Record<E, string>>) {
   const [open, setOpenState] = useState(() => storage.get(storageKey) !== 'closed')
   const [done, setDone] = useState<ReadonlySet<string>>(() => new Set())
 
@@ -22,7 +21,7 @@ export function useTryList(storageKey: string, eventToTask: Partial<Record<GridE
   const mark = useCallback((id: string) => setDone((prev) => (prev.has(id) ? prev : new Set(prev).add(id))), [])
 
   const onInteraction = useCallback(
-    (event: GridEvent) => {
+    (event: E) => {
       const id = eventToTask[event]
       if (id) mark(id)
     },

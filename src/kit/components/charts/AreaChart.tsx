@@ -28,6 +28,8 @@ interface AreaChartProps {
   /** Describes the chart for screen readers. */
   ariaLabel: string
   smooth?: boolean
+  /** Called when the reader hovers the chart or steps through it with the arrow keys. */
+  onHover?: () => void
   className?: string
 }
 
@@ -41,6 +43,7 @@ export function AreaChart({
   formatTip = formatX,
   ariaLabel,
   smooth = true,
+  onHover,
   className,
 }: AreaChartProps) {
   const [ref, width] = useWidth<HTMLDivElement>()
@@ -93,6 +96,7 @@ export function AreaChart({
     const x = e.clientX - rect.left
     const t = times[0] + ((x - left) / (innerW || 1)) * (times[times.length - 1] - times[0])
     setHover(nearestIndex(times, t))
+    onHover?.()
   }
 
   const onKey = (e: KeyboardEvent) => {
@@ -101,6 +105,7 @@ export function AreaChart({
     else if (e.key === 'Escape') setHover(null)
     else return
     e.preventDefault()
+    if (e.key !== 'Escape') onHover?.()
   }
 
   const hx = hover !== null && base[hover] ? sx(base[hover].x.getTime()) : null

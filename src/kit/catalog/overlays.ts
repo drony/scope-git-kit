@@ -22,6 +22,28 @@ export const overlayDocs: ComponentDoc[] = [
     notes: ['Esc and outside click close it, focus returns to the trigger. Do not put a `Select` inside: its list is its own floating layer.'],
   },
   {
+    id: 'hover-card',
+    name: 'HoverCard',
+    group: 'overlays',
+    summary: 'A richer preview that opens when the pointer rests on something (or it gets keyboard focus): a mini chart, a few facts.',
+    source: 'kit/components/overlays/HoverCard.tsx',
+    props: [
+      prop('content', 'ReactNode', 'What the card shows. It is not rendered until the card opens, so it can be as rich as you like.', { required: true }),
+      prop('children', 'ReactNode', 'The element to hover. It is wrapped in an inline span.', { required: true }),
+      prop('placement', 'Placement', 'Preferred side.', { default: "'right-start'" }),
+      prop('delay', 'number', 'Milliseconds the pointer must rest before the card opens.', { default: '300' }),
+      prop('onOpen', '() => void', 'Called each time the card opens.'),
+    ],
+    example: `<HoverCard content={<AssetPeek asset={asset} />}>
+  <strong>{asset.symbol}</strong>
+</HoverCard>`,
+    notes: [
+      'The card stays open while the pointer travels onto it, closes on Esc, and opens on keyboard focus.',
+      'Touch devices do not open it, so never hide essential information in a hover card.',
+      'For information only. Put actions in a Popover.',
+    ],
+  },
+  {
     id: 'tooltip',
     name: 'Tooltip',
     group: 'overlays',

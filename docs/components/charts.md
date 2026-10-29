@@ -22,6 +22,7 @@ import { AreaChart } from '@/kit/components/charts/AreaChart'
 | `formatX` | `(d: Date) => string` |  | X axis label format. |
 | `formatTip` | `(d: Date) => string` |  | Tooltip title format. |
 | `smooth` | `boolean` | `true` | Monotone curve instead of straight segments. |
+| `onHover` | `() => void` |  | Called when the reader hovers the chart or steps through it with the arrow keys. |
 | `ariaLabel` *(required)* | `string` |  | Describes the chart for screen readers. |
 
 ```tsx
@@ -67,10 +68,16 @@ import { DonutChart } from '@/kit/components/charts/DonutChart'
 | `centerLabel` | `ReactNode` |  | Small text in the middle. |
 | `centerValue` | `ReactNode` |  | Big text in the middle. Hovering a slice shows its label and value instead. |
 | `formatValue` | `(n: number) => string` |  | Value format in the legend. |
+| `activeId` | `string \| null` |  | Highlighted slice. Leave out to let the chart manage hovering itself; pass it with `onActiveChange` to link the donut to other UI. |
+| `onActiveChange` | `(id: string \| null) => void` |  | Called with the slice id under the pointer, or null when it leaves. |
 | `ariaLabel` *(required)* | `string` |  | Describes the chart for screen readers. |
 
 ```tsx
 <DonutChart ariaLabel="Allocation" slices={slices} centerLabel="Total" centerValue="$152k" formatValue={(n) => fmt.money(n, 0)} />
+
+// linked to a table: hovering a slice highlights its rows, hovering a row highlights its slice
+const [linked, setLinked] = useState<string | null>(null)
+<DonutChart activeId={linked} onActiveChange={setLinked} … />
 ```
 
 ### CandlestickChart

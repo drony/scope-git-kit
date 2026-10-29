@@ -17,6 +17,7 @@ export const chartDocs: ComponentDoc[] = [
       prop('formatX', '(d: Date) => string', 'X axis label format.'),
       prop('formatTip', '(d: Date) => string', 'Tooltip title format.'),
       prop('smooth', 'boolean', 'Monotone curve instead of straight segments.', { default: 'true' }),
+      prop('onHover', '() => void', 'Called when the reader hovers the chart or steps through it with the arrow keys.'),
       a11y,
     ],
     example: `<AreaChart ariaLabel="Portfolio value" series={[{ id: 'p', label: 'Portfolio', data, area: true }]} formatY={(n) => fmt.moneyCompact(n)} />`,
@@ -50,9 +51,15 @@ export const chartDocs: ComponentDoc[] = [
       prop('centerLabel', 'ReactNode', 'Small text in the middle.'),
       prop('centerValue', 'ReactNode', 'Big text in the middle. Hovering a slice shows its label and value instead.'),
       prop('formatValue', '(n: number) => string', 'Value format in the legend.'),
+      prop('activeId', 'string | null', 'Highlighted slice. Leave out to let the chart manage hovering itself; pass it with `onActiveChange` to link the donut to other UI.'),
+      prop('onActiveChange', '(id: string | null) => void', 'Called with the slice id under the pointer, or null when it leaves.'),
       a11y,
     ],
-    example: `<DonutChart ariaLabel="Allocation" slices={slices} centerLabel="Total" centerValue="$152k" formatValue={(n) => fmt.money(n, 0)} />`,
+    example: `<DonutChart ariaLabel="Allocation" slices={slices} centerLabel="Total" centerValue="$152k" formatValue={(n) => fmt.money(n, 0)} />
+
+// linked to a table: hovering a slice highlights its rows, hovering a row highlights its slice
+const [linked, setLinked] = useState<string | null>(null)
+<DonutChart activeId={linked} onActiveChange={setLinked} … />`,
   },
   {
     id: 'candlestick-chart',

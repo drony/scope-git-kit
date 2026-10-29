@@ -4,7 +4,7 @@
 
 Popover, tooltip, menu, modal and drawer.
 
-[Popover](#popover) · [Tooltip](#tooltip) · [Menu](#menu) · [Modal](#modal) · [Drawer](#drawer)
+[Popover](#popover) · [HoverCard](#hovercard) · [Tooltip](#tooltip) · [Menu](#menu) · [Modal](#modal) · [Drawer](#drawer)
 
 ### Popover
 
@@ -31,6 +31,32 @@ import { Popover } from '@/kit/components/overlays/Popover'
 ```
 
 - Esc and outside click close it, focus returns to the trigger. Do not put a `Select` inside: its list is its own floating layer.
+
+### HoverCard
+
+A richer preview that opens when the pointer rests on something (or it gets keyboard focus): a mini chart, a few facts.
+
+```ts
+import { HoverCard } from '@/kit/components/overlays/HoverCard'
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `content` *(required)* | `ReactNode` |  | What the card shows. It is not rendered until the card opens, so it can be as rich as you like. |
+| `children` *(required)* | `ReactNode` |  | The element to hover. It is wrapped in an inline span. |
+| `placement` | `Placement` | `'right-start'` | Preferred side. |
+| `delay` | `number` | `300` | Milliseconds the pointer must rest before the card opens. |
+| `onOpen` | `() => void` |  | Called each time the card opens. |
+
+```tsx
+<HoverCard content={<AssetPeek asset={asset} />}>
+  <strong>{asset.symbol}</strong>
+</HoverCard>
+```
+
+- The card stays open while the pointer travels onto it, closes on Esc, and opens on keyboard focus.
+- Touch devices do not open it, so never hide essential information in a hover card.
+- For information only. Put actions in a Popover.
 
 ### Tooltip
 

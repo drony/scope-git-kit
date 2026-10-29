@@ -25,6 +25,9 @@ import { DataTable } from '@/kit/components/data/DataTable'
 | `dense` | `boolean` |  | Tighter row padding. |
 | `initialSort` | `{ key: string; dir: 'asc' \| 'desc' }` |  | Sort applied at first. |
 | `empty` | `ReactNode` |  | Shown under the header when there are no rows. |
+| `rowClassName` | `(row: T) => string \| undefined` |  | Extra classes for a row, e.g. `is-linked` to highlight rows tied to something hovered elsewhere. |
+| `onRowHover` | `(row: T \| null) => void` |  | Called with the row under the pointer or keyboard focus, and with null when it leaves. |
+| `onSortChange` | `(sort) => void` |  | Called when the person changes the sort; undefined when sorting is switched off. |
 
 ```tsx
 <DataTable caption="Holdings" rows={rows} rowKey={(r) => r.symbol} initialSort={{ key: 'value', dir: 'desc' }}
@@ -32,6 +35,8 @@ import { DataTable } from '@/kit/components/data/DataTable'
 ```
 
 - Header buttons cycle ascending, descending, off and set `aria-sort`.
+- Controls inside a row (a star, a link) keep their own keys: pressing Enter on them does not trigger `onRowClick`.
+- To link a table to a chart, hold the hovered id in state: `onRowHover` writes it, `rowClassName` reads it (see the dashboard).
 
 ### DataGrid
 

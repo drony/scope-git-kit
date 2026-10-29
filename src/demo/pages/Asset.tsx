@@ -5,6 +5,7 @@ import { useToast } from '@/kit/context/ToastContext'
 import { useFormat } from '@/kit/lib/format'
 import { CASH, CLASS_LABELS, NEWS, assetBySymbol, assetStats, ohlc, priceSeries, type Asset } from '@/demo/seed/market'
 import { today } from '@/kit/lib/date'
+import { useWatchlist } from '@/demo/hooks/useWatchlist'
 import { usePageTitle } from '@/kit/hooks/usePageTitle'
 import { AssetIcon } from '@/kit/components/ui/AssetIcon'
 import { Button, ButtonLink } from '@/kit/components/ui/Button'
@@ -211,7 +212,8 @@ function AssetView({ asset }: { asset: Asset }) {
   usePageTitle(`${asset.symbol} · ${asset.name}`)
   const [range, setRange] = useState<RangeId>('3M')
   const [view, setView] = useState<'line' | 'candles'>('line')
-  const [watching, setWatching] = useState(false)
+  const watch = useWatchlist()
+  const watching = watch.has(asset.symbol)
 
   const stats = useMemo(() => assetStats(asset), [asset])
   const series = useMemo(() => priceSeries(asset, DAYS[range]), [asset, range])
@@ -243,10 +245,7 @@ function AssetView({ asset }: { asset: Asset }) {
               <Button
                 variant="ghost"
                 aria-pressed={watching}
-                onClick={() => {
-                  setWatching((w) => !w)
-                  toast.push({ title: watching ? `Removed ${asset.symbol} from your watchlist` : `Added ${asset.symbol} to your watchlist` })
-                }}
+                onClick={() => watch.toggle(asset.symbol)}
               >
                 <Star aria-hidden="true" fill={watching ? 'currentColor' : 'none'} />
                 {watching ? 'Watching' : 'Watch'}

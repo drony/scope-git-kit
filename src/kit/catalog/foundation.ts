@@ -88,18 +88,34 @@ const value = edits[editKey(row.id, 'jan')] ?? row.jan
     ],
   },
   {
+    id: 'use-stored-set',
+    name: 'useStoredSet',
+    group: 'foundation',
+    kind: 'hook',
+    summary: 'A set of strings (ids, symbols) kept in this browser and shared across the app: change it in one place and every component reading the same key updates.',
+    source: 'kit/hooks/useStoredSet.ts',
+    props: [
+      prop('key', 'string', 'Storage key. Components using the same key share one set.', { required: true }),
+      prop('initial', 'readonly string[]', 'Items used the first time, before anything is stored.', { default: '[]' }),
+    ],
+    example: `const favorites = useStoredSet('favorites', ['NVDA'])
+favorites.has('AAPL')            // true or false
+const nowOn = favorites.toggle('AAPL')   // returns whether it is now in the set`,
+    notes: ['Returns `items`, `size`, `has(item)` and `toggle(item)`. Built on `useSyncExternalStore`, so it stays consistent across components and tabs of the same page.'],
+  },
+  {
     id: 'use-try-list',
     name: 'useTryList',
     group: 'foundation',
     kind: 'hook',
-    summary: 'State for a “Try it” checklist: which steps are done, and whether the card is shown (remembered in this browser).',
+    summary: 'State for a “Try it” checklist: which steps are done, and whether the card is shown (remembered in this browser). Works with DataGrid events or with events you define yourself.',
     source: 'kit/hooks/useTryList.ts',
     props: [
       prop('storageKey', 'string', 'Where the shown/hidden choice is stored.', { required: true }),
-      prop('eventToTask', 'Partial<Record<GridEvent, string>>', 'Maps what DataGrid reports (edit, sort …) to the step it completes. Define it outside the component.', { required: true }),
+      prop('eventToTask', 'Partial<Record<E, string>>', 'Maps an event (what DataGrid reports, or your own union such as "range" | "chart") to the step it completes. Define it outside the component.', { required: true }),
     ],
     example: `const tryout = useTryList('my-try', { edit: 'edit', sort: 'sort' })
-<DataGrid onInteraction={tryout.onInteraction} … />   // tryout.mark('month') ticks a custom step`,
+<DataGrid onInteraction={tryout.onInteraction} … />   // tryout.mark('month') ticks a step from anywhere`,
   },
   {
     id: 'use-copy',

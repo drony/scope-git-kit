@@ -16,6 +16,10 @@ interface DonutChartProps {
   centerLabel?: ReactNode
   centerValue?: ReactNode
   formatValue?: (n: number) => string
+  /** Highlighted slice. Leave out to let the chart manage hovering itself; pass it (with `onActiveChange`) to link it to other UI. */
+  activeId?: string | null
+  /** Called with the slice id under the pointer, or null when it leaves. */
+  onActiveChange?: (id: string | null) => void
   ariaLabel: string
   className?: string
 }
@@ -27,10 +31,17 @@ export function DonutChart({
   centerLabel,
   centerValue,
   formatValue = (n) => String(n),
+  activeId,
+  onActiveChange,
   ariaLabel,
   className,
 }: DonutChartProps) {
-  const [active, setActive] = useState<string | null>(null)
+  const [hovered, setHovered] = useState<string | null>(null)
+  const active = activeId !== undefined ? activeId : hovered
+  const setActive = (id: string | null) => {
+    setHovered(id)
+    onActiveChange?.(id)
+  }
   const total = slices.reduce((sum, s) => sum + s.value, 0) || 1
   const r = (size - thickness) / 2
   const c = 2 * Math.PI * r
