@@ -17,7 +17,7 @@ concurrency:
 
 env:
   # The public repository that serves the demo with GitHub Pages: OWNER/REPO.
-  DEMO_REPO: drony/finscope
+  DEMO_REPO: drony/scope-git
 
 jobs:
   publish:

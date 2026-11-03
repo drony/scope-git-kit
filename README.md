@@ -6,7 +6,7 @@ A **reusable React component kit** with a demo app and seed data around it. It f
 > This is not a product. The finance content (portfolio, markets, cash flow) is **fictional demo and seed data**. What matters is
 > that the components are easy to take into another project, and that they are documented and checked.
 
-**Live demo:** https://drony.github.io/finscope/
+**Live demo:** https://drony.github.io/scope-git/ (Finscope) and https://drony.github.io/scope-git/contest/ (Contest Scope)
 
 ## What is in it
 
