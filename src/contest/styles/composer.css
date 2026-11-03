@@ -1,0 +1,195 @@
+/* The back-office editors: question composer, option lists and the answer key editor. */
+
+.cs-composer,
+.cs-keyed {
+  display: grid;
+  gap: 1.125rem;
+  min-width: 0;
+}
+.cs-field {
+  display: grid;
+  gap: 0.375rem;
+  min-width: 0;
+}
+.cs-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+}
+.cs-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+
+/* ---- Attached media ---- */
+.cs-attach-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.cs-attach {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 4rem;
+  height: 4rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--hairline);
+  overflow: hidden;
+  font-size: 0.6875rem;
+  color: var(--muted);
+}
+.cs-attach img {
+  height: 100%;
+  width: auto;
+  max-width: 8rem;
+  object-fit: cover;
+}
+
+/* ---- Option rows ---- */
+.cs-options {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+}
+.cs-options .sortable {
+  width: 100%;
+}
+.cs-options .sortable-item {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 0.5rem;
+}
+.cs-option-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.375rem;
+}
+.cs-option-row .sortable-handle {
+  margin-top: 0.4375rem;
+}
+.cs-option-fields {
+  display: grid;
+  gap: 0.375rem;
+  flex: 1;
+  min-width: 0;
+}
+.cs-option-main {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.cs-option-main .input-wrap {
+  flex: 1;
+  min-width: 0;
+}
+.cs-option-thumb {
+  width: 1.5rem;
+  height: 1.5rem;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+/* ---- Details blocks ---- */
+.cs-more,
+.cs-try {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 0.625rem 0.875rem;
+}
+.cs-more summary,
+.cs-try summary {
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+.cs-more[open],
+.cs-try[open] {
+  display: grid;
+  gap: 0.875rem;
+}
+
+/* ---- Answer key ---- */
+/* Inside an Alert, which wraps its text in a paragraph: spans, not a list. */
+.cs-problems {
+  display: grid;
+  gap: 0.25rem;
+}
+.cs-problems > span::before {
+  content: '• ';
+}
+.cs-key-choice {
+  display: grid;
+  gap: 0.625rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.cs-key-text,
+.cs-key-rubric,
+.cs-key-order {
+  display: grid;
+  gap: 0.625rem;
+  justify-items: start;
+}
+.cs-key-text > *,
+.cs-key-rubric > * {
+  max-width: 100%;
+}
+.cs-accepted {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(9rem, 12rem) auto;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+.cs-key-rubric .cs-accepted {
+  grid-template-columns: minmax(0, 1fr) 6rem auto;
+}
+@media (max-width: 560px) {
+  .cs-accepted,
+  .cs-key-rubric .cs-accepted {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .cs-accepted > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+.cs-key-order ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.9375rem;
+  color: var(--ink);
+}
+.cs-try-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+.cs-try-result {
+  display: grid;
+  gap: 0.125rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--radius-sm);
+  background: var(--hairline);
+  font-size: 0.8125rem;
+  color: var(--body);
+}
+.cs-try-result strong {
+  color: var(--ink);
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+}
+.cs-try-result.is-full {
+  background: var(--answer-right-soft);
+}
+.cs-try-result.is-full strong {
+  color: var(--success-text);
+}

@@ -1,0 +1,517 @@
+/* Media: the uploader queue now; the library, viewer and cropper add their own parts below. */
+
+.cs-uploader {
+  display: grid;
+  gap: 0.625rem;
+}
+.cs-uploader .dropzone {
+  position: relative;
+}
+.cs-uploader .dropzone.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.cs-queue {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cs-queue-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 16rem) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.875rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 0.8125rem;
+}
+.cs-queue-main {
+  display: grid;
+  min-width: 0;
+}
+.cs-queue-main strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--ink);
+}
+.cs-queue-main span {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.cs-queue-bar {
+  height: 0.375rem;
+  border-radius: 999px;
+  background: var(--hairline);
+  overflow: hidden;
+}
+.cs-queue-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 0.15s linear;
+}
+.cs-queue-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--muted);
+}
+.cs-queue-state svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex: none;
+}
+.cs-queue-state.tone-success {
+  color: var(--success-text);
+}
+.cs-queue-state.tone-error {
+  color: var(--error);
+}
+.cs-queue-actions {
+  display: inline-flex;
+  gap: 0.125rem;
+}
+.cs-queue-item.is-error {
+  border-color: var(--error);
+}
+@media (max-width: 560px) {
+  .cs-queue-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .cs-queue-bar,
+  .cs-queue-state {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+/* ---- CroppedImage ---- */
+.cs-cropped {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: var(--hairline);
+}
+.cs-cropped-view {
+  position: absolute;
+  container-type: size;
+}
+.cs-cropped-view img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: none;
+  user-select: none;
+}
+.cs-cropped-plain {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ---- ImageCropper ---- */
+.cs-cropper {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.cs-crop-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.cs-crop-buttons {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+.cs-crop-stage {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--hairline);
+  touch-action: none;
+  user-select: none;
+}
+.cs-crop-stage .cs-cropped {
+  display: block;
+}
+.cs-crop-box {
+  position: absolute;
+  box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.55);
+  outline: 2px solid #fff;
+  outline-offset: -1px;
+  cursor: move;
+}
+.cs-crop-box:focus-visible {
+  outline: 3px solid var(--accent);
+}
+.cs-crop-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to right, transparent calc(33.33% - 0.5px), rgb(255 255 255 / 0.5) calc(33.33% - 0.5px) calc(33.33% + 0.5px), transparent calc(33.33% + 0.5px), transparent calc(66.66% - 0.5px), rgb(255 255 255 / 0.5) calc(66.66% - 0.5px) calc(66.66% + 0.5px), transparent calc(66.66% + 0.5px)),
+    linear-gradient(to bottom, transparent calc(33.33% - 0.5px), rgb(255 255 255 / 0.5) calc(33.33% - 0.5px) calc(33.33% + 0.5px), transparent calc(33.33% + 0.5px), transparent calc(66.66% - 0.5px), rgb(255 255 255 / 0.5) calc(66.66% - 0.5px) calc(66.66% + 0.5px), transparent calc(66.66% + 0.5px));
+}
+.cs-crop-handle {
+  position: absolute;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 3px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.4);
+}
+.cs-crop-handle.is-nw { left: -0.4375rem; top: -0.4375rem; cursor: nwse-resize; }
+.cs-crop-handle.is-ne { right: -0.4375rem; top: -0.4375rem; cursor: nesw-resize; }
+.cs-crop-handle.is-sw { left: -0.4375rem; bottom: -0.4375rem; cursor: nesw-resize; }
+.cs-crop-handle.is-se { right: -0.4375rem; bottom: -0.4375rem; cursor: nwse-resize; }
+.cs-crop-handle.is-n { left: calc(50% - 0.4375rem); top: -0.4375rem; cursor: ns-resize; }
+.cs-crop-handle.is-s { left: calc(50% - 0.4375rem); bottom: -0.4375rem; cursor: ns-resize; }
+.cs-crop-handle.is-w { top: calc(50% - 0.4375rem); left: -0.4375rem; cursor: ew-resize; }
+.cs-crop-handle.is-e { top: calc(50% - 0.4375rem); right: -0.4375rem; cursor: ew-resize; }
+.cs-crop-focal {
+  position: absolute;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: -0.625rem 0 0 -0.625rem;
+  border-radius: 999px;
+  border: 3px solid #fff;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.5), 0 2px 6px rgb(0 0 0 / 0.4);
+  cursor: grab;
+}
+.cs-crop-focal:active {
+  cursor: grabbing;
+}
+.cs-crop-focal:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+.cs-crop-previews {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem 0.75rem;
+}
+.cs-crop-previews figure {
+  flex: none;
+  margin: 0;
+  display: grid;
+  gap: 0.25rem;
+  justify-items: center;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.cs-crop-previews .cs-cropped {
+  width: auto;
+  height: 3.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+}
+
+/* ---- MediaLibrary ---- */
+.cs-library {
+  display: grid;
+  gap: 0.875rem;
+  min-width: 0;
+}
+.cs-library-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.cs-library-search {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+.cs-library-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+.cs-library-selection {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 0.875rem;
+}
+.cs-library-selection strong {
+  margin-right: auto;
+}
+.cs-library-count {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.cs-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.cs-media {
+  display: grid;
+  gap: 0.875rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cs-media.is-grid {
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+}
+.cs-media-card {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition:
+    border-color 0.12s var(--ease),
+    box-shadow 0.12s var(--ease);
+}
+.cs-media-card:hover {
+  border-color: var(--line-strong);
+}
+.cs-media-card.is-picked {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.cs-media-open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: calc(var(--radius) - 4px);
+  background: none;
+  overflow: hidden;
+  cursor: pointer;
+}
+.cs-media-open:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.cs-media-open .cs-cropped {
+  display: block;
+}
+.cs-media-icon {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  background: var(--hairline);
+  color: var(--muted);
+}
+.cs-media-icon svg {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+.cs-media-pick {
+  position: absolute;
+  top: 0.875rem;
+  left: 0.875rem;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: 0 0 0 1px var(--line-strong);
+}
+.cs-media-pick input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.cs-media-tick {
+  position: absolute;
+  top: 0.875rem;
+  left: 0.875rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: var(--accent) center / 0.875rem no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8.5l3.2 3.2L13 4.5'/%3E%3C/svg%3E");
+  box-shadow: 0 0 0 2px var(--surface);
+  pointer-events: none;
+}
+.cs-media-meta {
+  display: grid;
+  min-width: 0;
+  padding: 0 0.25rem;
+}
+.cs-media-meta strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+.cs-media-meta span {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.cs-media-flags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 0.25rem 0.25rem;
+}
+.cs-media-unused {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.cs-media.is-list {
+  gap: 0.375rem;
+}
+.cs-media.is-list .cs-media-card {
+  grid-template-columns: 3rem minmax(0, 1fr) auto;
+  align-items: center;
+  padding: 0.375rem 0.75rem 0.375rem 0.375rem;
+}
+.cs-media.is-list .cs-media-pick,
+.cs-media.is-list .cs-media-tick {
+  top: 50%;
+  left: auto;
+  right: 0.75rem;
+  transform: translateY(-50%);
+}
+.cs-media.is-list .cs-media-flags {
+  padding: 0 2rem 0 0;
+  justify-content: flex-end;
+}
+
+/* ---- MediaViewer ---- */
+.cs-viewer {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(16rem, 2fr);
+  gap: 1.25rem;
+  align-items: start;
+  min-width: 0;
+}
+@media (max-width: 760px) {
+  .cs-viewer {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.cs-viewer-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 12rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--hairline);
+  overflow: hidden;
+}
+.cs-viewer-stage video,
+.cs-viewer-stage audio,
+.cs-viewer-stage object {
+  width: 100%;
+}
+.cs-viewer-stage object {
+  min-height: 28rem;
+}
+.cs-viewer-zoom {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+.cs-viewer-zoom > span {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--surface);
+}
+.cs-viewer-nav {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+}
+.cs-viewer-side {
+  display: grid;
+  gap: 0.875rem;
+  min-width: 0;
+}
+.cs-viewer-side h3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1rem;
+}
+.cs-viewer-facts {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0;
+  font-size: 0.8125rem;
+}
+.cs-viewer-facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid var(--hairline);
+}
+.cs-viewer-facts dt {
+  color: var(--muted);
+}
+.cs-viewer-facts dd {
+  margin: 0;
+  color: var(--ink);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.cs-viewer-form {
+  display: grid;
+  gap: 0.75rem;
+}
+.cs-viewer-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.cs-viewer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* ---- MediaPicker ---- */
+.cs-picker {
+  display: grid;
+  gap: 0.875rem;
+  min-height: 22rem;
+  align-content: start;
+}

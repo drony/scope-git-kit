@@ -9,7 +9,7 @@ import {
   type Theme,
 } from './schema'
 
-export const DRAFT_KEY = 'finscope.config.draft'
+export const DRAFT_KEY = 'kit.config.draft'
 
 /* ------------------------------------------------------------------ */
 /* Factory defaults. app.config.json is "what is saved in the project";
@@ -57,12 +57,12 @@ export const FACTORY_DARK: Palette = {
 export const FACTORY: AppConfig = {
   version: 1,
   site: {
-    name: 'Finscope',
+    name: 'Your product',
     tagline: 'Your money, in plain sight.',
     locale: 'en-US',
     currency: 'USD',
     weekStartsOn: 1,
-    supportEmail: 'help@finscope.example',
+    supportEmail: 'help@example.com',
   },
   theme: {
     mode: 'light',
@@ -256,8 +256,8 @@ export interface Preset {
 
 export const PRESETS: Preset[] = [
   {
-    id: 'finscope',
-    name: 'Finscope',
+    id: 'default',
+    name: 'Default',
     swatch: ['#171717', '#0070f3', '#7928ca', '#ff0080'],
     theme: {
       colors: { light: FACTORY_LIGHT, dark: FACTORY_DARK },

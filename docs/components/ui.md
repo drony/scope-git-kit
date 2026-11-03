@@ -4,7 +4,7 @@
 
 Buttons, badges, cards, feedback and page scaffolding.
 
-[Button](#button) · [Tag](#tag) · [Chip](#chip) · [Badge](#badge) · [Delta](#delta) · [Dot, Eyebrow, Kbd](#dot-eyebrow-kbd) · [StarButton](#starbutton) · [Card, CardHead, Kpi](#card-cardhead-kpi) · [Alert](#alert) · [Meter](#meter) · [Skeleton](#skeleton) · [EmptyState](#emptystate) · [Avatar, AvatarGroup](#avatar-avatargroup) · [Terminal, CopyButton](#terminal-copybutton) · [Section, SectionHead, PageHero](#section-sectionhead-pagehero) · [Reveal](#reveal) · [AssetIcon](#asseticon)
+[Button](#button) · [ApiReference](#apireference) · [Tag](#tag) · [Chip](#chip) · [Badge](#badge) · [Delta](#delta) · [Dot, Eyebrow, Kbd](#dot-eyebrow-kbd) · [StarButton](#starbutton) · [Card, CardHead, Kpi](#card-cardhead-kpi) · [Alert](#alert) · [Meter](#meter) · [Skeleton](#skeleton) · [EmptyState](#emptystate) · [Avatar, AvatarGroup](#avatar-avatargroup) · [Terminal, CopyButton](#terminal-copybutton) · [Section, SectionHead, PageHero](#section-sectionhead-pagehero) · [Reveal](#reveal) · [AssetIcon](#asseticon) · [Countdown](#countdown) · [Timeline](#timeline) · [SplitPane](#splitpane) · [PreviewFrame](#previewframe)
 
 ### Button
 
@@ -32,6 +32,27 @@ import { Button, ButtonLink } from '@/kit/components/ui/Button'
 
 - Accepts every native `<button>` attribute; ButtonLink accepts every router `Link` prop.
 - Disabled and loading buttons ignore clicks.
+
+### ApiReference
+
+A component catalog as a searchable reference: one tab per group and one expandable entry per component, with its props, an example and notes. It renders any catalog in the shape of `kit/catalog/define.ts`.
+
+```ts
+import { ApiReference } from '@/kit/components/docs/ApiReference'
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `docs` *(required)* | `ComponentDoc[]` |  | The catalog entries to show. |
+| `groups` *(required)* | `GroupDoc[]` |  | The groups, in the order of the tabs. |
+| `intro` | `ReactNode` |  | Text under the heading: say where the catalog lives and how the written docs are made. |
+| `className` | `string` |  | Extra classes for the section. |
+
+```tsx
+<ApiReference docs={DOCS} groups={GROUPS} intro={<>Generated from <code>src/kit/catalog</code>.</>} />
+```
+
+- Typing in the search box looks at names, summaries and exports across every group.
 
 ### Tag
 
@@ -344,4 +365,90 @@ import { AssetIcon } from '@/kit/components/ui/AssetIcon'
 
 ```tsx
 <AssetIcon symbol="AAPL" />
+```
+
+### Countdown
+
+A countdown to a moment, as four blocks or one line. Screen readers hear the time left, not every second.
+
+```ts
+import { Countdown } from '@/kit/components/ui/Countdown'
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `to` *(required)* | `Date \| string \| number` |  | The moment it counts down to. |
+| `variant` | `'blocks' \| 'inline'` | `'blocks'` | Four boxes, or a single line such as 2d 03:14:09. |
+| `doneLabel` | `ReactNode` | `'Time is up'` | Shown instead of the numbers once the moment has passed. |
+| `onDone` | `() => void` |  | Called once when it reaches zero. |
+| `labels` | `{ days; hours; minutes; seconds }` |  | Words under the blocks, for another language. |
+| `now` | `() => number` |  | Replaces the clock, for tests and demos. |
+
+```tsx
+<Countdown to="2027-03-10T23:59:00Z" doneLabel="The contest has closed" />
+```
+
+### Timeline
+
+A vertical list of events on a line: filled when done, ringed when active, hollow when upcoming.
+
+```ts
+import { Timeline } from '@/kit/components/ui/Timeline'
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `items` *(required)* | `TimelineItem[]` |  | The events: `id`, `title`, `time`, `description`, `icon`, `state` and `tone`. |
+| `label` *(required)* | `string` |  | Names the list for screen readers. |
+
+```tsx
+<Timeline label="Round schedule" items={[
+  { id: 'a', title: 'Round one opens', time: 'Mar 1', state: 'done' },
+  { id: 'b', title: 'Round one closes', time: 'Mar 3', state: 'active' },
+  { id: 'c', title: 'Scores published', time: 'Mar 5', state: 'upcoming' },
+]} />
+```
+
+### SplitPane
+
+Two panes with a draggable divider, for "edit on the left, preview on the right". Stacks on narrow screens.
+
+```ts
+import { SplitPane } from '@/kit/components/ui/SplitPane'
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `start` *(required)* | `ReactNode` |  | The first pane. |
+| `end` *(required)* | `ReactNode` |  | The second pane. |
+| `initial` | `number` | `0.5` | Share of the width the first pane gets before the person drags, 0 to 1. |
+| `min` | `number` | `0.25` | Smallest share either pane can have. |
+| `storageKey` | `string` |  | Remembers the divider position in this browser. |
+| `label` | `string` | `'Resize panes'` | Names the divider for screen readers. |
+
+```tsx
+<SplitPane initial={0.55} storageKey="question-editor" start={<Editor />} end={<Preview />} />
+```
+
+- The divider is a focusable separator: ← → move it, Shift makes the steps bigger, Home and End jump to the limits.
+
+### PreviewFrame
+
+Shows its children as a page on a phone, tablet or desktop: laid out at the real width, then scaled to fit.
+
+```ts
+import { PreviewFrame } from '@/kit/components/ui/PreviewFrame'
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `children` *(required)* | `ReactNode` |  | The page to preview. |
+| `device` | `'phone' \| 'tablet' \| 'desktop'` | `'phone'` | Which device to draw. |
+| `onDeviceChange` | `(device) => void` |  | Shows a device switch above the frame when given. |
+| `height` | `number` | `640` | Height of the frame's screen in CSS px, before scaling. |
+| `label` | `string` | `'Preview'` | Names the preview for screen readers. |
+
+```tsx
+const [device, setDevice] = useState<PreviewDevice>('phone')
+<PreviewFrame device={device} onDeviceChange={setDevice}><QuestionView /></PreviewFrame>
 ```

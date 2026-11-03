@@ -4,7 +4,7 @@
 
 The simple DataTable and the editable DataGrid for finance tables.
 
-[DataTable](#datatable) · [DataGrid](#datagrid) · [GridColumn and friends](#gridcolumn-and-friends) · [TryList](#trylist) · [Signed](#signed)
+[DataTable](#datatable) · [DataGrid](#datagrid) · [GridColumn and friends](#gridcolumn-and-friends) · [TryList](#trylist) · [Signed](#signed) · [SortableList](#sortablelist)
 
 ### DataTable
 
@@ -50,6 +50,13 @@ import { DataGrid } from '@/kit/components/grid/DataGrid'
 | --- | --- | --- | --- |
 | `title` *(required)* | `string` |  | Header title and the table’s accessible name. |
 | `unit` | `string` |  | Small label next to the title, e.g. the currency. |
+| `defaultCollapsed` | `string[]` |  | Group keys that start collapsed. |
+| `subtotals` | `'collapsed' \| 'always'` |  | Where group subtotals show: on a collapsed group only (default, like an outline) or on every group row. |
+| `defaultPageSize` | `number` |  | Rows per page before the person picks one: 10, 25, 50 or 100 (default 25). |
+| `defaultDensity` | `'comfortable' \| 'compact'` |  | Row height before the person picks one in the View menu (default comfortable). |
+| `tall` | `boolean` |  | Uses most of the screen height before it scrolls inside its card (statements and long lists). |
+| `actions` | `ReactNode` |  | Extra controls at the start of the header actions, e.g. an info button that holds the table’s explanation. |
+| `bare` | `boolean` |  | A quiet table for a few rows: no search, filters, column menu, row checkboxes or pager. Sorting, cell selection with its sum, copy and CSV export still work. |
 | `columns` *(required)* | `GridColumn<R>[]` |  | The first column is the pinned row label; the rest are value columns. See GridColumn. |
 | `rows` *(required)* | `R[]` |  | The data. |
 | `rowId` *(required)* | `(row: R) => string` |  | Stable unique id per row. |
@@ -65,6 +72,7 @@ import { DataGrid } from '@/kit/components/grid/DataGrid'
 | `save` | `GridSave` |  | Autosave status, switch and manual save (see `useEditStore().saveProps()`). |
 | `apiRef` | `MutableRefObject<DataGridHandle \| null>` |  | Gives the page `exportCsv()` and `edit(changes)`. |
 | `onInteraction` | `(event: GridEvent) => void` |  | Reports edits, sorting, filtering … for a “Try it” checklist. |
+| `onCheckedChange` | `(ids: string[]) => void` |  | Called with the ids of the rows whose checkbox is ticked, every time that set changes. For bulk actions next to the grid. |
 
 ```tsx
 const { edits, history, apply, saveProps } = useEditStore('budget')
@@ -96,9 +104,15 @@ import type { GridColumn, GroupOption, FilterDef, CellChange, GridHistory, GridS
 | `editable` | `boolean` |  | GridColumn: the cell can be edited. |
 | `hidden` | `boolean` |  | GridColumn: hidden until switched on in the Columns menu. |
 | `focus` | `boolean` |  | GridColumn: highlight the column (e.g. the month under review). |
-| `summary` | `'sum' \| ((rows: R[]) => ReactNode)` |  | GridColumn: totals row and group subtotals. |
+| `summary` | `'sum' \| ((rows: R[], scope: 'total' \| 'group') => ReactNode)` |  | GridColumn: totals row and group subtotals. A function also gets the scope, so a column can show something in the totals row only. |
+| `noSum` | `boolean` |  | GridColumn: the selection total ignores this column (rates, shares, measures that must not be added up). |
+| `band` | `string` |  | GridColumn: a spanning heading above this column; consecutive columns with the same text share one heading (a two-level header). |
+| `printGroup` | `string` |  | GridColumn: marks the heading and cells with data-print-group, so print code can drop a group of columns. |
 | `minWidth` | `number` |  | GridColumn: minimum width in px. |
 | `key` | `(row: R) => string` |  | GroupOption: the group a row belongs to. |
+| `title` | `(key: string) => ReactNode` |  | GroupOption: the group heading; rich content is fine. |
+| `plainTitle` | `(key: string) => string` |  | GroupOption: plain-text group name for screen readers when `title` is not a string. |
+| `hideHeading` | `(key: string) => boolean` |  | GroupOption: a group that returns true shows its rows without a heading row. |
 | `order` | `string[]` |  | GroupOption: group order. |
 | `test` | `(row: R, value: string) => boolean` |  | FilterDef: whether a row matches an option; a row passes if it matches any selected option. |
 | `rowId` | `string` |  | CellChange: the row that changed. |
@@ -150,3 +164,26 @@ import { Signed } from '@/kit/components/grid/Signed'
 ```tsx
 <Signed value={change}>{fmt.moneySigned(change, 0)}</Signed>
 ```
+
+### SortableList
+
+A reorderable list. Drag the handle, or focus it and use Space and the arrow keys. Moves are announced to screen readers.
+
+```ts
+import { SortableList } from '@/kit/components/data/SortableList'
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `items` *(required)* | `T[]` |  | The items, in their current order. |
+| `getId` *(required)* | `(item: T) => string` |  | A stable id per item. |
+| `onChange` *(required)* | `(items: T[]) => void` |  | Called with the new order on every move, live while dragging. |
+| `renderItem` *(required)* | `(item: T, state) => ReactNode` |  | Draws one row. `state` has `index`, `dragging`, `grabbed` and `handle`; place `handle` where you want the grip. |
+| `label` *(required)* | `string` |  | Names the list for screen readers. |
+
+```tsx
+<SortableList label="Answer options" items={options} getId={(o) => o.id} onChange={setOptions}
+  renderItem={(o, { handle }) => <div className="row">{handle}<span>{o.label}</span></div>} />
+```
+
+- Keyboard: focus the handle, Space picks the item up, ↑ ↓ move it, Space drops it, Escape puts it back.

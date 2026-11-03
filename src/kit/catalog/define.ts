@@ -8,8 +8,8 @@
 
 export type GroupId = 'ui' | 'forms' | 'nav' | 'overlays' | 'data' | 'charts' | 'calendar' | 'media' | 'theme' | 'foundation'
 
-export interface GroupDoc {
-  id: GroupId
+export interface GroupDoc<G extends string = GroupId> {
+  id: G
   title: string
   description: string
 }
@@ -24,12 +24,13 @@ export interface PropDoc {
   required?: boolean
 }
 
-export interface ComponentDoc {
+/** `G` is the group id type: a layer on top of the kit (its own catalog) passes its own ids. */
+export interface ComponentDoc<G extends string = GroupId> {
   /** Lowercase, unique, used for anchors. */
   id: string
   /** The name people import. */
   name: string
-  group: GroupId
+  group: G
   kind?: 'component' | 'hook' | 'type' | 'utility'
   /** One sentence: what it is for. */
   summary: string
@@ -56,7 +57,7 @@ export const prop = (
 ): PropDoc => ({ name, type, description, ...options })
 
 /** The import statement for an entry, or an empty string when it has none (e.g. a group of utilities). */
-export function importStatement(doc: ComponentDoc): string {
+export function importStatement(doc: ComponentDoc<string>): string {
   const names = doc.imports ?? doc.exports ?? [doc.name]
   if (!names.length) return ''
   const from = `@/${doc.source.replace(/\.(tsx?|ts)$/, '')}`

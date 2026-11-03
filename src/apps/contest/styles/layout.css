@@ -1,0 +1,57 @@
+/* ---- header navigation ---- */
+.cs-nav {
+  display: flex;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.cs-nav a {
+  display: block;
+  white-space: nowrap;
+  padding: 0.5rem 0.875rem;
+  border-radius: 999px;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.9375rem;
+}
+.cs-nav a:hover {
+  color: var(--ink);
+  background: var(--hairline);
+}
+.cs-nav a.is-active {
+  color: var(--ink);
+  background: var(--accent-soft);
+}
+
+/* ---- page grids ---- */
+.cs-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  margin-top: 2rem;
+}
+
+/* ---- footer ---- */
+.cs-footer {
+  border-top: 1px solid var(--line);
+  padding-block: 2.5rem;
+}
+.cs-footer-in {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  align-items: center;
+  justify-content: space-between;
+}
+.cs-footer-in p {
+  margin: 0;
+  max-width: 44rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+/* The wordmark stays on one line; on a narrow header the navigation moves into the kit's menu. */
+.site-header .brand {
+  white-space: nowrap;
+}

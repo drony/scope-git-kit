@@ -55,6 +55,24 @@ set((prev) => ({ ...prev, name: 'Ada' }))`,
     notes: ['Returns `value`, `set`, `undo`, `redo`, `reset(value)`, `canUndo` and `canRedo`. `undo` and `redo` are stable references.'],
   },
   {
+    id: 'use-flip',
+    name: 'useFlip',
+    group: 'foundation',
+    kind: 'hook',
+    summary: 'Animates a list when its order changes: items slide from their old place to the new one. Skipped for people who prefer reduced motion.',
+    source: 'kit/hooks/useFlip.ts',
+    props: [
+      prop('order', 'string[]', 'The item keys in their current order. The animation runs when this changes.', { required: true }),
+      prop('duration', 'number', 'Milliseconds each move takes.', { default: '320' }),
+    ],
+    example: `const list = useFlip<HTMLOListElement>(rows.map((r) => r.id))
+
+<ol ref={list}>
+  {rows.map((r) => <li key={r.id} data-flip={r.id}>{r.name}</li>)}
+</ol>`,
+    notes: ['Returns the ref for the list container. Each item needs `data-flip` with its key.', 'Positions are measured inside the container, so scrolling the page never looks like a move.'],
+  },
+  {
     id: 'use-autosave',
     name: 'useAutosave',
     group: 'foundation',
@@ -113,6 +131,7 @@ const nowOn = favorites.toggle('AAPL')   // returns whether it is now in the set
     props: [
       prop('storageKey', 'string', 'Where the shown/hidden choice is stored.', { required: true }),
       prop('eventToTask', 'Partial<Record<E, string>>', 'Maps an event (what DataGrid reports, or your own union such as "range" | "chart") to the step it completes. Define it outside the component.', { required: true }),
+      prop('defaultOpen', 'boolean', 'Whether the card is shown the first time, before the person has opened or closed it.', { default: 'true' }),
     ],
     example: `const tryout = useTryList('my-try', { edit: 'edit', sort: 'sort' })
 <DataGrid onInteraction={tryout.onInteraction} … />   // tryout.mark('month') ticks a step from anywhere`,

@@ -10,6 +10,7 @@ import {
 } from 'react'
 import { CircleAlert, Eye, EyeOff, Search, X } from 'lucide-react'
 import { cn } from '@/kit/lib/cn'
+import { useText } from '@/kit/lib/i18n'
 
 /* ---- Field: label + control + hint + error ------------------------------ */
 
@@ -111,13 +112,19 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function T
   )
 })
 
+const PASSWORD_TEXT = {
+  en: { label: 'Password', show: 'Show password', hide: 'Hide password' },
+  tr: { label: 'Parola', show: 'Parolayı göster', hide: 'Parolayı gizle' },
+}
+
 export const PasswordField = forwardRef<HTMLInputElement, TextFieldProps>(function PasswordField(
-  { label = 'Password', hint, error, optional, fieldClassName, ...input },
+  { label, hint, error, optional, fieldClassName, ...input },
   ref,
 ) {
+  const t = useText(PASSWORD_TEXT)
   const [show, setShow] = useState(false)
   return (
-    <Field label={label} hint={hint} error={error} optional={optional} className={fieldClassName}>
+    <Field label={label ?? t.label} hint={hint} error={error} optional={optional} className={fieldClassName}>
       <Input
         ref={ref}
         type={show ? 'text' : 'password'}
@@ -126,7 +133,7 @@ export const PasswordField = forwardRef<HTMLInputElement, TextFieldProps>(functi
           <button
             type="button"
             onClick={() => setShow((s) => !s)}
-            aria-label={show ? 'Hide password' : 'Show password'}
+            aria-label={show ? t.hide : t.show}
             aria-pressed={show}
           >
             {show ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}

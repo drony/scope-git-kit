@@ -1,9 +1,10 @@
 # Deployment
 
-The project builds to static files (`dist/`) and needs no server.
+The project builds to static files (`dist/`) and needs no server. Finscope is the site root; Contest Scope is built into `dist/contest/`
+and served under `/contest/`.
 
 ```bash
-npm run build      # runs the checks, then builds into dist/
+npm run build      # runs the checks, then builds both apps into dist/ and dist/contest/
 npm run preview    # serve the build locally
 ```
 
@@ -36,6 +37,9 @@ The site is served at `https://OWNER.github.io/DEMO/`. Two details make that wor
 - The build copies `index.html` to `404.html`, so opening or refreshing `/REPO/tables` (a client route) still loads the app.
   GitHub answers those requests with status 404 but serves the app, which is fine in a browser; link previews of deep links may
   show an error, so share the root address.
+- GitHub serves only the root `404.html`, so a refreshed link into Contest Scope (`/REPO/contest/play`) would show Finscope. The root
+  `404.html` therefore carries a small script that moves such a link to `/REPO/contest/?/play`, and Contest Scope's `index.html` puts the
+  path back before the router starts. Both scripts are added by `vite.config.ts` and exist only in builds.
 
 If the source may be public, the simpler setup is a single repository with **Settings → Pages → Source: GitHub Actions** and a workflow
 that builds and uploads `dist/` with `actions/upload-pages-artifact` and `actions/deploy-pages`.
@@ -47,6 +51,7 @@ Build with the base path of that host, and make sure unknown paths fall back to 
 - **At the root of a domain** (Netlify, Vercel and similar): no `BASE_PATH` is needed. Add a rewrite that serves `index.html` for
   unknown paths: for Netlify a `public/_redirects` file containing `/* /index.html 200`, for Vercel a `rewrites` entry in `vercel.json`.
 - **Under a sub-path**: `BASE_PATH=/sub/ npm run build`. The generated `404.html` is the fallback on hosts that serve it for missing files.
+  Contest Scope needs its own fallback rule: unknown paths under `/sub/contest/` serve `/sub/contest/index.html`.
 
 Check your host's documentation for single-page-app fallbacks; the build always writes `dist/404.html`, which some hosts treat specially.
 

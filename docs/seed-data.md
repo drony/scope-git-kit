@@ -1,6 +1,6 @@
 # Seed data
 
-All fictional data lives in `src/demo/seed`. Nothing else in the project invents a number, a name or an article. That is what
+All fictional data lives in `src/apps/<app>/seed`. Nothing else in the project invents a number, a name or an article. That is what
 makes the demo replaceable: swap these modules for your API and the pages keep working.
 
 | Module | Contains |

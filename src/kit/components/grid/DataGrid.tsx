@@ -61,7 +61,7 @@ interface Editing extends Cell {
   selectAll: boolean
 }
 
-type Item<R> = { kind: 'group'; key: string; title: string; rows: R[] } | { kind: 'row'; id: string; row: R }
+type Item<R> = { kind: 'group'; key: string; title: ReactNode; label: string; rows: R[] } | { kind: 'row'; id: string; row: R }
 
 interface View {
   hidden: string[]
@@ -79,6 +79,13 @@ export interface DataGridProps<R> {
   title: string
   /** Small label next to the title, e.g. the currency. */
   unit?: string
+  /** Uses most of the screen height before it scrolls inside its card (statements and long lists). */
+  tall?: boolean
+  /** Extra controls at the start of the header actions, e.g. an info button that holds the table's explanation. */
+  actions?: ReactNode
+  /** A quiet table for a few rows: no search, filters, column menu, row checkboxes or pager. Header sorting, cell
+   *  selection with its sum, copy and `apiRef.exportCsv()` still work. */
+  bare?: boolean
   columns: GridColumn<R>[]
   rows: R[]
   rowId: (row: R) => string
@@ -88,6 +95,14 @@ export interface DataGridProps<R> {
   onEdit?: (changes: CellChange[]) => void
   groups?: GroupOption<R>[]
   defaultGroup?: string
+  /** Group keys that start collapsed. */
+  defaultCollapsed?: string[]
+  /** Where group subtotals show: on a collapsed group only (default, like an outline) or on every group row. */
+  subtotals?: 'collapsed' | 'always'
+  /** Rows per page when the person has not chosen one yet (10, 25, 50 or 100; default 25). */
+  defaultPageSize?: number
+  /** Row height before the person picks one in the View menu (default 'comfortable'). */
+  defaultDensity?: Density
   filters?: FilterDef<R>[]
   /** Content of the panel shown under a row when its chevron is opened. */
   detail?: (row: R) => ReactNode
@@ -100,29 +115,31 @@ export interface DataGridProps<R> {
   apiRef?: MutableRefObject<DataGridHandle | null>
   /** Called when the person does something notable (edit, sort, filter …). */
   onInteraction?: (event: GridEvent) => void
+  /** Called with the ids of the rows whose checkbox is ticked, every time that set changes. For bulk actions next to the grid. */
+  onCheckedChange?: (ids: string[]) => void
 }
 
 /* ---- helpers ----------------------------------------------------------------------------- */
 
-function defaultView<R>(columns: GridColumn<R>[], defaultGroup?: string): View {
+function defaultView<R>(columns: GridColumn<R>[], defaultGroup?: string, pageSize?: number, density: Density = 'comfortable'): View {
   return {
     hidden: columns.filter((c) => c.hidden).map((c) => c.id),
-    density: 'comfortable',
+    density,
     group: defaultGroup ?? 'none',
     totals: true,
-    pageSize: 25,
+    pageSize: pageSize !== undefined && PAGE_SIZES.includes(pageSize) ? pageSize : 25,
   }
 }
 
-function readView<R>(storageKey: string, columns: GridColumn<R>[], defaultGroup?: string): View {
-  const base = defaultView(columns, defaultGroup)
-  const raw = storage.get(`finscope.grid.${storageKey}`)
+function readView<R>(storageKey: string, columns: GridColumn<R>[], defaultGroup?: string, pageSize?: number, density?: Density): View {
+  const base = defaultView(columns, defaultGroup, pageSize, density)
+  const raw = storage.get(`kit.grid.${storageKey}`)
   if (!raw) return base
   try {
     const p = JSON.parse(raw) as Partial<View>
     return {
       hidden: Array.isArray(p.hidden) ? p.hidden.filter((x): x is string => typeof x === 'string') : base.hidden,
-      density: p.density === 'compact' ? 'compact' : 'comfortable',
+      density: p.density === 'compact' ? 'compact' : p.density === 'comfortable' ? 'comfortable' : base.density,
       group: typeof p.group === 'string' ? p.group : base.group,
       totals: p.totals !== false,
       pageSize: PAGE_SIZES.includes(Number(p.pageSize)) ? Number(p.pageSize) : base.pageSize,
@@ -132,9 +149,9 @@ function readView<R>(storageKey: string, columns: GridColumn<R>[], defaultGroup?
   }
 }
 
-function summarize<R>(col: GridColumn<R>, list: R[]): ReactNode {
+function summarize<R>(col: GridColumn<R>, list: R[], scope: 'total' | 'group'): ReactNode {
   if (!col.summary) return null
-  if (typeof col.summary === 'function') return col.summary(list)
+  if (typeof col.summary === 'function') return col.summary(list, scope)
   let sum = 0
   for (const row of list) {
     const v = col.value(row)
@@ -155,13 +172,20 @@ function cellContent<R>(row: R, col: GridColumn<R>): ReactNode {
 export function DataGrid<R>({
   title,
   unit,
+  tall,
+  actions,
   columns,
   rows,
   rowId,
+  bare,
   searchText,
   onEdit,
   groups,
   defaultGroup,
+  defaultCollapsed,
+  subtotals = 'collapsed',
+  defaultPageSize,
+  defaultDensity,
   filters,
   detail,
   totalLabel,
@@ -170,6 +194,7 @@ export function DataGrid<R>({
   storageKey,
   apiRef,
   onInteraction,
+  onCheckedChange,
 }: DataGridProps<R>) {
   const t = useGridText()
   const { locale } = useSite()
@@ -177,18 +202,21 @@ export function DataGrid<R>({
   const tableRef = useRef<HTMLTableElement>(null)
   const filterDefs: FilterDef<R>[] = filters ?? NO_FILTERS
 
-  const [view, setView] = useState<View>(() => readView(storageKey, columns, defaultGroup))
+  const [view, setView] = useState<View>(() => readView(storageKey, columns, defaultGroup, defaultPageSize, defaultDensity))
   useEffect(() => {
-    storage.set(`finscope.grid.${storageKey}`, JSON.stringify(view))
+    storage.set(`kit.grid.${storageKey}`, JSON.stringify(view))
   }, [view, storageKey])
 
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<Record<string, string[]>>({})
   const [sort, setSort] = useState<SortState | null>(null)
   const [page, setPage] = useState(1)
-  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set(defaultCollapsed))
   const [open, setOpen] = useState<Set<string>>(() => new Set())
   const [checked, setChecked] = useState<Set<string>>(() => new Set())
+  const checkedCallback = useRef(onCheckedChange)
+  checkedCallback.current = onCheckedChange
+  useEffect(() => checkedCallback.current?.([...checked]), [checked])
   const [active, setActive] = useState<Cell | null>(null)
   const [anchor, setAnchor] = useState<Cell | null>(null)
   const [editing, setEditing] = useState<Editing | null>(null)
@@ -224,6 +252,22 @@ export function DataGrid<R>({
   )
   const nameCol = visibleCols[0]
   const valueCols = useMemo(() => visibleCols.slice(1), [visibleCols])
+  /** Spanning headings above consecutive value columns that share a `band`. */
+  const bands = useMemo(() => {
+    const out: { key: string; label: string; span: number; printGroup?: string }[] = []
+    for (const c of valueCols) {
+      const label = c.band ?? ''
+      const last = out[out.length - 1]
+      if (last && last.label === label) last.span += 1
+      else out.push({ key: `${label}|${c.id}`, label, span: 1, printGroup: c.printGroup })
+    }
+    return valueCols.some((c) => c.band) ? out : []
+  }, [valueCols])
+  /** A column is numeric when any row holds a number, so an empty cell ("—") lines up with its neighbours. */
+  const numericCols = useMemo(
+    () => new Set(valueCols.filter((c) => rows.some((r) => typeof c.value(r) === 'number')).map((c) => c.id)),
+    [valueCols, rows],
+  )
   const colById = useMemo(() => new Map(columns.map((c) => [c.id, c])), [columns])
   const rowById = useMemo(() => new Map(rows.map((r) => [rowId(r), r])), [rows, rowId])
 
@@ -258,9 +302,11 @@ export function DataGrid<R>({
     })
   }, [filtered, sort, colById, locale])
 
-  const pageCount = Math.max(1, Math.ceil(sorted.length / view.pageSize))
+  /** A bare table has no pager, so it must show every row (it used to cut off at one page). */
+  const pageSize = bare ? Math.max(sorted.length, 1) : view.pageSize
+  const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize))
   const current = Math.min(page, pageCount)
-  const pageRows = useMemo(() => sorted.slice((current - 1) * view.pageSize, current * view.pageSize), [sorted, current, view.pageSize])
+  const pageRows = useMemo(() => sorted.slice((current - 1) * pageSize, current * pageSize), [sorted, current, pageSize])
 
   const groupOption = groups?.find((g) => g.id === view.group)
 
@@ -280,7 +326,10 @@ export function DataGrid<R>({
     const out: Item<R>[] = []
     for (const key of [...map.keys()].sort((a, b) => rank(a) - rank(b))) {
       const list = map.get(key) ?? []
-      out.push({ kind: 'group', key, title: groupOption.title(key), rows: list })
+      const title = groupOption.title(key)
+      if (!groupOption.hideHeading?.(key)) {
+        out.push({ kind: 'group', key, title, label: groupOption.plainTitle?.(key) ?? (typeof title === 'string' ? title : key), rows: list })
+      }
       if (!collapsed.has(key)) for (const row of list) out.push({ kind: 'row', id: rowId(row), row })
     }
     return out
@@ -324,6 +373,7 @@ export function DataGrid<R>({
       const row = rowById.get(navRows[r])
       if (!row) continue
       for (let c = range.c0; c <= range.c1; c++) {
+        if (valueCols[c].noSum) continue
         const v = valueCols[c].value(row)
         if (typeof v === 'number') {
           sum += v
@@ -725,8 +775,8 @@ export function DataGrid<R>({
   }, [someChecked, allChecked])
 
   const colSpan = 2 + valueCols.length
-  const from = sorted.length ? (current - 1) * view.pageSize + 1 : 0
-  const to = (current - 1) * view.pageSize + pageRows.length
+  const from = sorted.length ? (current - 1) * pageSize + 1 : 0
+  const to = (current - 1) * pageSize + pageRows.length
 
   /* ---- render -------------------------------------------------------------------------------------------- */
 
@@ -743,13 +793,14 @@ export function DataGrid<R>({
   }
 
   return (
-    <div className="grid-card" data-density={view.density}>
+    <div className={cn('grid-card', bare && 'is-bare')} data-density={view.density}>
       <div className="g-head">
         <h2 className="g-title">
           {title}
           {unit && <span className="g-unit">{unit}</span>}
         </h2>
         <div className="g-head-actions">
+          {actions}
           {save && (
             <>
               <span className={cn('g-status', `is-${save.status}`)} role="status" aria-live="polite">
@@ -882,10 +933,10 @@ export function DataGrid<R>({
         </div>
       )}
 
-      <div className="g-scroll">
+      <div className={cn('g-scroll', tall && 'is-tall')}>
         <table
           ref={tableRef}
-          className="g-table"
+          className={cn('g-table', bands.length > 0 && 'has-band')}
           role="grid"
           aria-label={title}
           aria-colcount={colSpan}
@@ -897,6 +948,17 @@ export function DataGrid<R>({
           onPointerLeave={() => setHover(null)}
         >
           <thead>
+            {bands.length > 0 && (
+              <tr className="g-band-row">
+                <th className="g-sticky g-check-col" aria-hidden="true" />
+                <th className="g-sticky g-name-col" aria-hidden="true" />
+                {bands.map((b) => (
+                  <th key={b.key} scope="colgroup" colSpan={b.span} className="g-band" data-print-group={b.printGroup}>
+                    {b.label}
+                  </th>
+                ))}
+              </tr>
+            )}
             <tr>
               <th scope="col" className="g-sticky g-check-col">
                 <label className="check g-check">
@@ -925,8 +987,9 @@ export function DataGrid<R>({
                   <th
                     key={col.id}
                     scope="col"
-                    className={cn(i === 0 ? 'g-sticky g-name-col' : 'g-num', col.focus && 'is-focus', i > 0 && cross?.c === col.id && 'is-cross-col')}
+                    className={cn(i === 0 ? 'g-sticky g-name-col' : numericCols.has(col.id) ? 'g-num' : 'g-text', col.focus && 'is-focus', i > 0 && cross?.c === col.id && 'is-cross-col')}
                     data-col={i === 0 ? undefined : col.id}
+                    data-print-group={col.printGroup}
                     style={{ minWidth: col.minWidth }}
                     aria-sort={on ? (sort?.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
                   >
@@ -983,7 +1046,7 @@ export function DataGrid<R>({
                         type="button"
                         className="g-toggle"
                         aria-expanded={!isCollapsed}
-                        aria-label={`${isCollapsed ? t.expandGroup : t.collapseGroup}: ${item.title}`}
+                        aria-label={`${isCollapsed ? t.expandGroup : t.collapseGroup}: ${item.label}`}
                         onClick={() => {
                           toggleIn(setCollapsed, item.key)
                           emit('collapse')
@@ -998,7 +1061,7 @@ export function DataGrid<R>({
                     </td>
                     {valueCols.map((col) => (
                       <td key={col.id} data-col={col.id} className={cn('g-num g-sub', col.focus && 'is-focus', cross?.c === col.id && 'is-cross-col')}>
-                        {isCollapsed ? summarize(col, item.rows) : null}
+                        {isCollapsed || subtotals === 'always' ? summarize(col, item.rows, 'group') : null}
                       </td>
                     ))}
                   </tr>
@@ -1056,12 +1119,13 @@ export function DataGrid<R>({
                           data-cell={cellKey}
                           data-row={id}
                           data-col={col.id}
+                          data-print-group={col.printGroup}
                           tabIndex={isStop && !isEditing ? 0 : -1}
                           aria-selected={isActive || inRange}
                           aria-readonly={!col.editable}
                           className={cn(
                             'g-cell',
-                            typeof col.value(row) === 'number' ? 'g-num' : 'g-text',
+                            numericCols.has(col.id) ? 'g-num' : 'g-text',
                             col.focus && 'is-focus',
                             col.editable && 'is-editable',
                             cross?.c === col.id && 'is-cross-col',
@@ -1078,7 +1142,7 @@ export function DataGrid<R>({
                             <CellEditor
                               initial={editing.initial}
                               selectAll={editing.selectAll}
-                              align={typeof col.value(row) === 'number' ? 'right' : 'left'}
+                              align={numericCols.has(col.id) ? 'right' : 'left'}
                               invalid={invalid}
                               ariaLabel={`${col.header}: ${label}`}
                               onCommit={commitEdit}
@@ -1113,8 +1177,8 @@ export function DataGrid<R>({
                 <td className="g-sticky g-check-col" />
                 <td className="g-sticky g-name-col">{totalLabel}</td>
                 {valueCols.map((col) => (
-                  <td key={col.id} data-col={col.id} className={cn('g-num', col.focus && 'is-focus', cross?.c === col.id && 'is-cross-col')}>
-                    {summarize(col, sorted)}
+                  <td key={col.id} data-col={col.id} data-print-group={col.printGroup} className={cn('g-num', col.focus && 'is-focus', cross?.c === col.id && 'is-cross-col')}>
+                    {summarize(col, sorted, 'total')}
                   </td>
                 ))}
               </tr>

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 
 /**
@@ -8,7 +9,8 @@ export interface NavLink<P = unknown> {
   id: string
   label: string
   to: string
-  description?: string
+  /** A line under the label. Text, or any node (a status pill, for example). */
+  description?: ReactNode
   icon?: LucideIcon
   /** A small tag next to the label, e.g. "New". */
   badge?: string
@@ -26,5 +28,12 @@ export interface NavEntry<P = unknown, F = unknown> {
   label: string
   /** A plain link when there is no mega panel. */
   to?: string
-  mega?: { columns: MegaColumn<P>[]; featured?: F }
+  /** Marks the entry the current page belongs to: the trigger or link turns bold and darker, and carries `aria-current`. */
+  current?: boolean
+  mega?: {
+    columns: MegaColumn<P>[]
+    featured?: F
+    /** Tighter panel for long lists: smaller gaps and icons, a wider side column. */
+    dense?: boolean
+  }
 }

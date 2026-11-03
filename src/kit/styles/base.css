@@ -398,6 +398,13 @@ b {
   border-bottom: 1px solid var(--line);
   padding-block: 1.5rem;
 }
+.page-bar-title {
+  font-size: clamp(1.75rem, 1.3rem + 1.7vw, 2.375rem);
+  letter-spacing: -0.034em;
+  text-wrap: balance;
+  font-weight: 660;
+  line-height: 1.1;
+}
 
 .final-cta {
   border-bottom: 1px solid var(--line);

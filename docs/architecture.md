@@ -1,48 +1,49 @@
 # Architecture
 
-## Three layers
+## Layers
 
 ```
 src/
-  kit/                 Reusable design system. Copy this folder into another project.
+  kit/                 Reusable design system, no domain knowledge. Copy this folder into another project.
     components/        ui, forms, nav, overlays, data, grid, charts, calendar, media, theme
     context/           ConfigProvider (theme + site settings), ToastProvider
-    hooks/             useHistory, useAutosave, useEditStore, useStoredSet, useTryList, useCopy, useMedia, usePageTitle
+    hooks/             useHistory, useAutosave, useEditStore, useStoredSet, useTryList, useCopy, useMedia, usePageTitle, useFlip
     lib/               cn, date, format, i18n, storage, asset, edits, random
     theme/             Configuration schema, defaults, presets, and the function that applies a theme
     styles/            Design tokens and the CSS for every component family
     catalog/           Metadata for every component: the single source of the docs
-  demo/                The demo app, built only from the kit and seed data
-    pages/             Home, Dashboard, Markets, tables, auth, help …
-    layout/            Header, footer, mobile menu, the mega-menu side panel
-    components/        Demo-only compositions (pricing section, auth layout, theme preview)
-    config/            Navigation structure and which pages use the wide layout
-    context/           A fake auth provider
-    hooks/             Demo-only hooks, e.g. the shared watchlist (built on the kit's useStoredSet)
-    seed/              Fictional data. The only place numbers and names are invented.
-    styles/            Header, footer and page layouts
-  config/              This project's settings: app.config.json and the object built from it
-  main.tsx, App.tsx    Entry point and routes
+  contest/             Reusable contest-platform components and data layer, built only on the kit (see docs/contest.md)
+  apps/
+    finscope/          The finance demo app
+    contest/           The Contest Scope app
+      pages/ layout/ components/ config/ context/ hooks/ styles/
+      seed/            Fictional data. The only place numbers and names are invented.
+      settings/        This app's theme and site settings: app.config.json and the object built from it
+      main.tsx, App.tsx  Entry point and routes
 ```
+
+One Vite project serves every app: `APP=<id> vite` (`npm run dev` for Finscope, `npm run dev:contest` for Contest Scope).
+`index.html` is shared; `vite.config.ts` swaps in the entry script, the title and the description of the active app.
 
 ### The rules
 
 | Layer | May import | Must not import |
 | --- | --- | --- |
-| `kit` | itself, npm packages | `demo`, `config` |
-| `demo/seed` | kit **types** and `kit/lib` | pages, layout, React, kit components (values) |
-| `demo` | everything above | |
+| `kit` | itself, npm packages | `contest`, `apps` |
+| `contest` | `kit`, npm packages | `apps` |
+| `apps/<a>` | `kit`, `contest`, itself | another app |
+| `apps/<a>/seed` | kit and contest **types**, `kit/lib` | pages, layout, React, components (values) |
 
 These are enforced by `npm run check:layers`, which runs as part of `npm run check` and `npm run build`. The reason is
-simple: the kit is meant to be copied into other projects, and one stray import of demo code would break that.
+simple: the kit is meant to be copied into other projects, and one stray import of app code would break that.
 
 ### How data gets into the kit
 
 Kit components never fetch or import data. It comes in through **props** (rows, series, options) or **providers**
 (`ConfigProvider` receives the saved configuration as a prop). Two examples:
 
-- `MegaMenu` takes `entries` and a `renderSide` function. The kit draws the menu and its behavior; the demo decides what
-  the side panel shows (`demo/layout/MegaSide.tsx`).
+- `MegaMenu` takes `entries` and a `renderSide` function. The kit draws the menu and its behavior; the app decides what
+  the side panel shows (`apps/finscope/layout/MegaSide.tsx`).
 - `DataGrid` takes `columns` and `rows`. The demo's two tables build their columns from seed data and the site locale.
 
 ## Theming flow
@@ -60,7 +61,7 @@ Stylesheets only read variables. Unsaved edits made in the theme editor are kept
 
 ## Page width
 
-`demo/config/pages.ts` lists the routes that use the wide layout. The `Layout` component sets `data-width="wide"` on
+`apps/<app>/config/pages.ts` lists the routes that use the wide layout. The `Layout` component sets `data-width="wide"` on
 `<html>`, and `--shell-active` switches between the regular and wide width. Header, footer and every `.container`
 follow, so their edges always line up.
 

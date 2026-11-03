@@ -1,0 +1,154 @@
+/* ==========================================================================
+   Page frame: the site header, the brand and the auth page shell.
+   Used by SiteHeader, Brand and AuthShell (kit/components/nav). The header height is the
+   --nav-h variable, which the theme sets from its "navHeight" style.
+   ========================================================================== */
+
+.site-header {
+  z-index: 50;
+  backdrop-filter: saturate(180%) blur(12px);
+  /* A shadow, not a border: the bar is exactly --nav-h tall, so sticky elements can sit at `top: var(--nav-h)`. */
+  box-shadow: 0 1px 0 var(--line);
+  background: color-mix(in srgb, var(--canvas) 80%, transparent);
+  position: sticky;
+  top: 0;
+}
+
+.nav {
+  border-inline-color: transparent;
+  align-items: center;
+  gap: 1.5rem;
+  height: var(--nav-h);
+  display: flex;
+}
+.brand {
+  color: var(--ink);
+  letter-spacing: -0.035em;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.875rem;
+  font-weight: 600;
+  display: inline-flex;
+  line-height: 1;
+}
+.brand:hover {
+  color: var(--ink);
+}
+.brand svg {
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+}
+.nav-main {
+  margin-inline: auto;
+}
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.nav-avatar {
+  border-radius: 999px;
+  display: grid;
+  transition: box-shadow 0.12s var(--ease);
+}
+.nav-avatar:hover {
+  box-shadow: 0 0 0 3px var(--hairline);
+}
+
+/* `Brand collapse`: under 1280 px only the mark stays; the name is still read by screen readers. */
+@media (width <= 1279px) {
+  .brand-collapse > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+@media (width <= 960px) {
+  .nav {
+    height: 4.5rem;
+    justify-content: space-between;
+  }
+  .brand {
+    font-size: 1.5rem;
+  }
+  .brand svg {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+  .nav-main {
+    display: none;
+  }
+}
+
+/* ---- auth page shell ------------------------------------------------------------------ */
+
+.auth {
+  border-bottom: 1px solid var(--line);
+  padding-block: clamp(2.5rem, 6vw, 5rem);
+}
+.auth-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 28rem) minmax(0, 1fr);
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: center;
+  justify-content: space-between;
+}
+.auth-main h1 {
+  font-size: clamp(1.875rem, 1.3rem + 2vw, 2.5rem);
+  letter-spacing: -0.034em;
+  text-wrap: balance;
+  font-weight: 660;
+  line-height: 1.1;
+}
+.auth-main .lead {
+  margin-top: 1.125rem;
+}
+.auth-form {
+  margin-top: 2rem;
+}
+.auth-footer {
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.auth-aside {
+  display: grid;
+  gap: 1.5rem;
+}
+.auth-figure {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem 1rem 0.5rem;
+}
+.auth-quote {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0 0.25rem;
+  color: var(--muted);
+}
+.auth-quote blockquote {
+  font-size: 1.125rem;
+  letter-spacing: -0.015em;
+  line-height: 1.5;
+  color: var(--ink);
+  max-width: 32rem;
+}
+.auth-quote figcaption {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+@media (width <= 960px) {
+  .auth-grid {
+    grid-template-columns: 1fr;
+  }
+  .auth-aside {
+    display: none;
+  }
+}

@@ -37,6 +37,10 @@ body.mega-open::after {
 .nav-link.is-open {
   background: var(--hairline);
 }
+/* the current section is darker AND heavier, so it does not rely on color alone */
+.nav-link.is-current {
+  font-weight: 600;
+}
 .nav-trigger svg {
   transition: transform 0.18s var(--ease);
 }
@@ -71,6 +75,21 @@ body.mega-open::after {
 }
 .mega-grid:not(:has(.mega-featured)) {
   grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+}
+.mega-grid.is-dense {
+  grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)) minmax(16rem, 1.7fr);
+  gap: 1.5rem 1.25rem;
+}
+.mega-grid.is-dense:not(:has(.mega-featured)) {
+  grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+}
+.is-dense .mega-item {
+  gap: 0.5rem;
+}
+.is-dense .mega-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 6px;
 }
 .mega-col h3 {
   font-family: var(--mono);

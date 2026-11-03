@@ -5,13 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run check && vite build",
+    "build": "npm run check && npm run build:apps",
+    "build:apps": "APP=finscope vite build && APP=contest vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "check": "tsc --noEmit && npm run check:layers && npm run docs:check",
     "check:layers": "node scripts/check-layers.mjs",
     "docs": "node scripts/build-docs.ts",
-    "docs:check": "node scripts/build-docs.ts --check"
+    "docs:check": "node scripts/build-docs.ts --check",
+    "dev:contest": "APP=contest vite",
+    "build:finscope": "npm run check && APP=finscope vite build",
+    "build:contest": "APP=contest vite build"
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.20",

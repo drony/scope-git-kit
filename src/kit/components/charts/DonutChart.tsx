@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { cn } from '@/kit/lib/cn'
+import { useFormat } from '@/kit/lib/format'
 import { seriesColor } from './scale'
 
 export interface Slice {
@@ -36,6 +37,7 @@ export function DonutChart({
   ariaLabel,
   className,
 }: DonutChartProps) {
+  const fmt = useFormat()
   const [hovered, setHovered] = useState<string | null>(null)
   const active = activeId !== undefined ? activeId : hovered
   const setActive = (id: string | null) => {
@@ -95,7 +97,7 @@ export function DonutChart({
           >
             <i style={{ background: a.color }} />
             <span>{a.label}</span>
-            <span className="mono tnum muted">{((a.value / total) * 100).toFixed(1)}%</span>
+            <span className="mono tnum muted">{fmt.pct((a.value / total) * 100, 1, false)}</span>
             <b className="mono tnum">{formatValue(a.value)}</b>
           </li>
         ))}

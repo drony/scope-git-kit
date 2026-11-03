@@ -1,6 +1,6 @@
 # Theming
 
-Everything visual is driven by one file, `src/config/app.config.json`, which the kit turns into CSS variables.
+Everything visual is driven by one file per app, `src/apps/<app>/settings/app.config.json`, which the kit turns into CSS variables.
 
 ## Three ways to change it
 
@@ -67,4 +67,4 @@ and grades them AAA, AA, "Large only" or "Low". Aim for AA on everything people 
 
 ## Wide pages
 
-Data-heavy pages use `shellWide`; reading pages use `shell`. Which is which is the list in `src/demo/config/pages.ts`.
+Data-heavy pages use `shellWide`; reading pages use `shell`. Which is which is the list in `src/apps/<app>/config/pages.ts`.

@@ -4,7 +4,7 @@
 
 Tabs, segmented control, accordion, breadcrumbs, pagination, stepper and the mega menu.
 
-[Tabs](#tabs) · [Segmented](#segmented) · [Accordion](#accordion) · [Breadcrumbs](#breadcrumbs) · [Pagination](#pagination) · [Stepper](#stepper) · [MegaMenu](#megamenu)
+[Tabs](#tabs) · [Segmented](#segmented) · [Accordion](#accordion) · [Breadcrumbs](#breadcrumbs) · [Pagination](#pagination) · [Stepper](#stepper) · [MegaMenu](#megamenu) · [SiteHeader](#siteheader) · [Brand](#brand) · [PageBar](#pagebar) · [AuthShell](#authshell)
 
 ### Tabs
 
@@ -146,3 +146,96 @@ import { MegaMenu } from '@/kit/components/nav/MegaMenu'
 - Opens on hover (with a short intent delay), click, or ↓ on the trigger; Esc closes and returns focus to the trigger.
 - Links can carry any `preview` data; the kit hands it back through `renderSide` untouched.
 - The page behind the panel is dimmed with a `mega-open` class on `<body>`. Styles: `kit/styles/mega.css`.
+- Set `current: true` on the entry the page belongs to: its trigger turns bold and darker and gets `aria-current`. A link's `description` can be a node, such as a status pill. Set `dense: true` on an entry's `mega` for a long list: gaps and icons shrink and the side column gets more room.
+
+### SiteHeader
+
+The sticky page header: brand, primary navigation and actions in one bar. It only lays them out.
+
+```ts
+import { SiteHeader } from '@/kit/components/nav/SiteHeader'
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `brand` *(required)* | `ReactNode` |  | The logo, usually a `Brand`. |
+| `children` | `ReactNode` |  | The primary navigation, usually a `MegaMenu`. Hidden under 960 px wide. |
+| `actions` | `ReactNode` |  | Buttons and menus on the right. Give them a menu button for narrow screens. |
+| `below` | `ReactNode` |  | Rendered inside the header under the bar, for a mobile menu panel. |
+| `navLabel` | `string` | `'Primary'` | Accessible name of the navigation. |
+| `skipTo` | `string` | `'#main'` | Target of the "skip to content" link. |
+| `skipLabel` | `string` | `'Skip to content'` | Text of the "skip to content" link. |
+| `className` | `string` |  | Extra class names for the `<header>`. The header must stay a direct child of a tall container to keep sticking. |
+
+```tsx
+<SiteHeader brand={<Brand name="Acme" mark={<Mark />} />} actions={<UserMenu />}>
+  <MegaMenu entries={NAV} />
+</SiteHeader>
+```
+
+- The bar height is the `--nav-h` variable, set from the theme's `navHeight`. Styles: `kit/styles/frame.css`.
+- Put `id="main"` on your `<main>` so the skip link has a target.
+
+### Brand
+
+The logo link of a header: a mark and the product name.
+
+```ts
+import { Brand } from '@/kit/components/nav/Brand'
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` *(required)* | `string` |  | Product name. Also used for the link's accessible name. |
+| `mark` *(required)* | `ReactNode` |  | The logo mark, usually an `<svg>`; the CSS sizes an `svg` child. |
+| `to` | `string` | `'/'` | Where the link goes. |
+| `collapse` | `boolean` |  | Hide the name under 1280 px wide and keep the mark; screen readers still read it. |
+| `className` | `string` |  | Extra class names. |
+
+```tsx
+<Brand name="Acme" mark={<svg viewBox="0 0 48 48">…</svg>} />
+```
+
+### PageBar
+
+The band under the header that names the page: a small label, the title and the page's actions.
+
+```ts
+import { PageBar } from '@/kit/components/nav/PageBar'
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `title` *(required)* | `ReactNode` |  | The page title (the `<h1>`). |
+| `eyebrow` | `ReactNode` |  | Small uppercase label above the title. |
+| `actions` | `ReactNode` |  | Buttons and pickers on the right. |
+| `above` | `ReactNode` |  | Content above the title row, such as breadcrumbs. |
+| `children` | `ReactNode` |  | Content under the title, such as a one-line description. |
+
+```tsx
+<PageBar eyebrow="Dashboard" title="Portfolio overview" actions={<Button>Export</Button>} />
+```
+
+### AuthShell
+
+The shell of a sign-in, sign-up or reset page: the form on the left, a calm side panel on the right.
+
+```ts
+import { AuthShell } from '@/kit/components/nav/AuthShell'
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `title` *(required)* | `ReactNode` |  | The page title (the `<h1>`). |
+| `lead` | `ReactNode` |  | One line under the title. |
+| `children` *(required)* | `ReactNode` |  | The form. |
+| `footer` | `ReactNode` |  | A line under the form, such as a link to the sign-up page. |
+| `aside` | `ReactNode` |  | The side panel, hidden on narrow screens and from assistive technology. |
+
+```tsx
+<AuthShell title="Welcome back" lead="Sign in to continue." footer={<Link to="/register">Create an account</Link>} aside={<Preview />}>
+  <form>…</form>
+</AuthShell>
+```
+
+- The side panel is decoration. Do not put private data in it: the page is shown before sign-in.

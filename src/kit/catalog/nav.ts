@@ -101,6 +101,81 @@ export const navDocs: ComponentDoc[] = [
       'Opens on hover (with a short intent delay), click, or ↓ on the trigger; Esc closes and returns focus to the trigger.',
       'Links can carry any `preview` data; the kit hands it back through `renderSide` untouched.',
       'The page behind the panel is dimmed with a `mega-open` class on `<body>`. Styles: `kit/styles/mega.css`.',
+      'Set `current: true` on the entry the page belongs to: its trigger turns bold and darker and gets `aria-current`. A link\'s `description` can be a node, such as a status pill. Set `dense: true` on an entry\'s `mega` for a long list: gaps and icons shrink and the side column gets more room.',
+    ],
+  },
+  {
+    id: 'site-header',
+    name: 'SiteHeader',
+    group: 'nav',
+    summary: 'The sticky page header: brand, primary navigation and actions in one bar. It only lays them out.',
+    source: 'kit/components/nav/SiteHeader.tsx',
+    props: [
+      prop('brand', 'ReactNode', 'The logo, usually a `Brand`.', { required: true }),
+      prop('children', 'ReactNode', 'The primary navigation, usually a `MegaMenu`. Hidden under 960 px wide.'),
+      prop('actions', 'ReactNode', 'Buttons and menus on the right. Give them a menu button for narrow screens.'),
+      prop('below', 'ReactNode', 'Rendered inside the header under the bar, for a mobile menu panel.'),
+      prop('navLabel', 'string', 'Accessible name of the navigation.', { default: "'Primary'" }),
+      prop('skipTo', 'string', 'Target of the "skip to content" link.', { default: "'#main'" }),
+      prop('skipLabel', 'string', 'Text of the "skip to content" link.', { default: "'Skip to content'" }),
+      prop('className', 'string', 'Extra class names for the `<header>`. The header must stay a direct child of a tall container to keep sticking.'),
+    ],
+    example: `<SiteHeader brand={<Brand name="Acme" mark={<Mark />} />} actions={<UserMenu />}>
+  <MegaMenu entries={NAV} />
+</SiteHeader>`,
+    notes: [
+      'The bar height is the `--nav-h` variable, set from the theme\'s `navHeight`. Styles: `kit/styles/frame.css`.',
+      'Put `id="main"` on your `<main>` so the skip link has a target.',
+    ],
+  },
+  {
+    id: 'brand',
+    name: 'Brand',
+    group: 'nav',
+    summary: 'The logo link of a header: a mark and the product name.',
+    source: 'kit/components/nav/Brand.tsx',
+    props: [
+      prop('name', 'string', 'Product name. Also used for the link\'s accessible name.', { required: true }),
+      prop('mark', 'ReactNode', 'The logo mark, usually an `<svg>`; the CSS sizes an `svg` child.', { required: true }),
+      prop('to', 'string', 'Where the link goes.', { default: "'/'" }),
+      prop('collapse', 'boolean', 'Hide the name under 1280 px wide and keep the mark; screen readers still read it.'),
+      prop('className', 'string', 'Extra class names.'),
+    ],
+    example: `<Brand name="Acme" mark={<svg viewBox="0 0 48 48">…</svg>} />`,
+  },
+  {
+    id: 'page-bar',
+    name: 'PageBar',
+    group: 'nav',
+    summary: 'The band under the header that names the page: a small label, the title and the page\'s actions.',
+    source: 'kit/components/nav/PageBar.tsx',
+    props: [
+      prop('title', 'ReactNode', 'The page title (the `<h1>`).', { required: true }),
+      prop('eyebrow', 'ReactNode', 'Small uppercase label above the title.'),
+      prop('actions', 'ReactNode', 'Buttons and pickers on the right.'),
+      prop('above', 'ReactNode', 'Content above the title row, such as breadcrumbs.'),
+      prop('children', 'ReactNode', 'Content under the title, such as a one-line description.'),
+    ],
+    example: `<PageBar eyebrow="Dashboard" title="Portfolio overview" actions={<Button>Export</Button>} />`,
+  },
+  {
+    id: 'auth-shell',
+    name: 'AuthShell',
+    group: 'nav',
+    summary: 'The shell of a sign-in, sign-up or reset page: the form on the left, a calm side panel on the right.',
+    source: 'kit/components/nav/AuthShell.tsx',
+    props: [
+      prop('title', 'ReactNode', 'The page title (the `<h1>`).', { required: true }),
+      prop('lead', 'ReactNode', 'One line under the title.'),
+      prop('children', 'ReactNode', 'The form.', { required: true }),
+      prop('footer', 'ReactNode', 'A line under the form, such as a link to the sign-up page.'),
+      prop('aside', 'ReactNode', 'The side panel, hidden on narrow screens and from assistive technology.'),
+    ],
+    example: `<AuthShell title="Welcome back" lead="Sign in to continue." footer={<Link to="/register">Create an account</Link>} aside={<Preview />}>
+  <form>…</form>
+</AuthShell>`,
+    notes: [
+      'The side panel is decoration. Do not put private data in it: the page is shown before sign-in.',
     ],
   },
 ]

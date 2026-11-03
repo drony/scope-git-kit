@@ -4,7 +4,7 @@
 
 Configuration, toasts, undo/redo, autosave, formatting and helpers.
 
-[ConfigProvider](#configprovider) · [ToastProvider](#toastprovider) · [useHistory](#usehistory) · [useAutosave](#useautosave) · [useEditStore](#useeditstore) · [useStoredSet](#usestoredset) · [useTryList](#usetrylist) · [useCopy](#usecopy) · [useMedia](#usemedia) · [usePageTitle](#usepagetitle) · [useFormat](#useformat) · [useText, useLang](#usetext-uselang) · [Utilities](#utilities)
+[ConfigProvider](#configprovider) · [ToastProvider](#toastprovider) · [useHistory](#usehistory) · [useFlip](#useflip) · [useAutosave](#useautosave) · [useEditStore](#useeditstore) · [useStoredSet](#usestoredset) · [useTryList](#usetrylist) · [useCopy](#usecopy) · [useMedia](#usemedia) · [usePageTitle](#usepagetitle) · [useFormat](#useformat) · [useText, useLang](#usetext-uselang) · [Utilities](#utilities)
 
 ### ConfigProvider
 
@@ -74,6 +74,30 @@ set((prev) => ({ ...prev, name: 'Ada' }))
 ```
 
 - Returns `value`, `set`, `undo`, `redo`, `reset(value)`, `canUndo` and `canRedo`. `undo` and `redo` are stable references.
+
+### useFlip
+
+Animates a list when its order changes: items slide from their old place to the new one. Skipped for people who prefer reduced motion.
+
+```ts
+import { useFlip } from '@/kit/hooks/useFlip'
+```
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `order` *(required)* | `string[]` |  | The item keys in their current order. The animation runs when this changes. |
+| `duration` | `number` | `320` | Milliseconds each move takes. |
+
+```tsx
+const list = useFlip<HTMLOListElement>(rows.map((r) => r.id))
+
+<ol ref={list}>
+  {rows.map((r) => <li key={r.id} data-flip={r.id}>{r.name}</li>)}
+</ol>
+```
+
+- Returns the ref for the list container. Each item needs `data-flip` with its key.
+- Positions are measured inside the container, so scrolling the page never looks like a move.
 
 ### useAutosave
 
@@ -151,6 +175,7 @@ import { useTryList } from '@/kit/hooks/useTryList'
 | --- | --- | --- | --- |
 | `storageKey` *(required)* | `string` |  | Where the shown/hidden choice is stored. |
 | `eventToTask` *(required)* | `Partial<Record<E, string>>` |  | Maps an event (what DataGrid reports, or your own union such as "range" \| "chart") to the step it completes. Define it outside the component. |
+| `defaultOpen` | `boolean` | `true` | Whether the card is shown the first time, before the person has opened or closed it. |
 
 ```tsx
 const tryout = useTryList('my-try', { edit: 'edit', sort: 'sort' })

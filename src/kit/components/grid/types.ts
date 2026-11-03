@@ -22,8 +22,16 @@ export interface GridColumn<R> {
   hidden?: boolean
   /** Highlights the column (the month being reviewed). */
   focus?: boolean
-  /** Totals row and group subtotals. `'sum'` adds the raw values and runs them through `format`. */
-  summary?: 'sum' | ((rows: R[]) => ReactNode)
+  /** A spanning heading above this column. Consecutive columns with the same text share one heading (a two-level header). */
+  band?: string
+  /** Marks the column's heading and cells with `data-print-group`, so print code can drop a group of columns. */
+  printGroup?: string
+  /** Totals row and group subtotals. `'sum'` adds the raw values and runs them through `format`. A function gets
+   *  the rows and `scope` ('total' for the totals row, 'group' for a group subtotal), so a column can show
+   *  something in the totals row only. */
+  summary?: 'sum' | ((rows: R[], scope: 'total' | 'group') => ReactNode)
+  /** The selection total skips this column. For rates, shares and measures that must not be added up. */
+  noSum?: boolean
   minWidth?: number
 }
 
@@ -31,7 +39,12 @@ export interface GroupOption<R> {
   id: string
   label: string
   key: (row: R) => string
-  title: (key: string) => string
+  /** The group heading. Rich content (a link, a badge) is fine; give `plainTitle` too when it is not plain text. */
+  title: (key: string) => ReactNode
+  /** Plain-text name of the group for screen readers; defaults to `title` when that is a string, else the key. */
+  plainTitle?: (key: string) => string
+  /** Rows of a group that returns true show without a heading row (a one-row group needs no heading). */
+  hideHeading?: (key: string) => boolean
   /** Group order. Groups not listed follow in the order they first appear. */
   order?: string[]
 }

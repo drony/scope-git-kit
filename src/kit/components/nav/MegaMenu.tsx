@@ -106,7 +106,7 @@ export function MegaMenu<P, F>({ entries, renderSide }: MegaMenuProps<P, F>) {
             <li key={entry.id} onPointerEnter={(e) => e.pointerType === 'mouse' && schedule(null, 60)}>
               <Link
                 to={entry.to ?? '/'}
-                className={cn('nav-link', location.pathname === entry.to && 'is-current')}
+                className={cn('nav-link', (entry.current ?? location.pathname === entry.to) && 'is-current')}
                 aria-current={location.pathname === entry.to ? 'page' : undefined}
                 onFocus={() => open && setOpen(null)}
               >
@@ -122,7 +122,8 @@ export function MegaMenu<P, F>({ entries, renderSide }: MegaMenuProps<P, F>) {
                 if (el) triggers.current.set(entry.id, el)
               }}
               type="button"
-              className={cn('nav-link nav-trigger', isOpen && 'is-open')}
+              className={cn('nav-link nav-trigger', isOpen && 'is-open', entry.current && 'is-current')}
+              aria-current={entry.current ? 'true' : undefined}
               aria-expanded={isOpen}
               aria-controls={`mega-${entry.id}`}
               onFocus={() => open && open !== entry.id && setOpen(null)}
@@ -142,7 +143,7 @@ export function MegaMenu<P, F>({ entries, renderSide }: MegaMenuProps<P, F>) {
             {isOpen && (
               <div className="mega" id={`mega-${entry.id}`}>
                 <div className="container">
-                  <div className="mega-grid" style={{ '--cols': entry.mega.columns.length } as CSSProperties}>
+                  <div className={cn('mega-grid', entry.mega.dense && 'is-dense')} style={{ '--cols': entry.mega.columns.length } as CSSProperties}>
                     {entry.mega.columns.map((col) => (
                       <div className="mega-col" key={col.title}>
                         <h3>{col.title}</h3>

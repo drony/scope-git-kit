@@ -39,7 +39,7 @@ export const formDocs: ComponentDoc[] = [
     example: `<TextField label="Email" type="email" icon={<Mail />} value={email} onChange={(e) => setEmail(e.target.value)} />
 <PasswordField value={pw} onChange={(e) => setPw(e.target.value)} />
 <SearchInput value={q} onValueChange={setQ} shortcut="/" placeholder="Search assets" />`,
-    notes: ['Every native input attribute is passed through, and refs are forwarded.', 'PasswordField has a show/hide button; SearchInput has a clear button once there is text.'],
+    notes: ['Every native input attribute is passed through, and refs are forwarded.', 'PasswordField has a show/hide button; its label and button text follow the site locale (English or Turkish). SearchInput has a clear button once there is text.'],
   },
   {
     id: 'select',

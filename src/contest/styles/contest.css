@@ -1,0 +1,19 @@
+/* Tokens for the contest components. They are derived from the theme palette, so the Theme & Settings screen drives them. */
+:root {
+  /* contest and question status */
+  --status-draft: var(--muted);
+  --status-live: var(--success);
+  --status-judging: var(--warning);
+  --status-closed: var(--line-strong);
+
+  /* medals: fixed hues, softened in dark mode by the surface they sit on */
+  --medal-gold: #e8b923;
+  --medal-silver: #a9b2c0;
+  --medal-bronze: #c98a52;
+
+  /* answer feedback */
+  --answer-right: var(--success);
+  --answer-wrong: var(--error);
+  --answer-right-soft: var(--success-soft);
+  --answer-wrong-soft: var(--error-soft);
+}

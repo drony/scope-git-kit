@@ -20,9 +20,10 @@ A **reusable React component kit** with a demo app and seed data around it. It f
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173
+npm run dev          # Finscope, http://localhost:5173
+npm run dev:contest  # Contest Scope, http://localhost:5173
 npm run check        # types, layer rules, docs up to date
-npm run build        # runs the checks, then builds into dist/
+npm run build        # runs the checks, then builds Finscope into dist/ and Contest Scope into dist/contest/
 ```
 
 Node 22.18 or newer.
@@ -31,8 +32,9 @@ Node 22.18 or newer.
 
 ```
 src/kit/     reusable design system: copy this folder into another project
-src/demo/    the demo app (pages, layout, fictional seed data), built only from the kit
-src/config/  this project's settings (app.config.json)
+src/contest/ reusable contest-platform components and data layer (built on the kit)
+src/apps/    one folder per product: finscope (finance demo), contest (Contest Scope). Pages, layout, theme, seed
+             (src/apps/<app>/settings/app.config.json is that app's theme)
 docs/        written guides and the generated component reference
 scripts/     layer check and docs generator
 ```
@@ -47,6 +49,7 @@ The kit never imports the demo or the seed data; `npm run check:layers` enforces
 | [Getting started](./docs/getting-started.md) | Run the demo, or use the kit in another project |
 | [Architecture](./docs/architecture.md) | Layers, data flow, theming flow |
 | [Component reference](./docs/components/README.md) | Every component, hook and utility: props, examples, keyboard behavior |
+| [The contest layer](./docs/contest.md) | Contest components, data model and backend contract (Contest Scope) |
 | [Theming](./docs/theming.md) | The configuration and every CSS variable |
 | [Seed data](./docs/seed-data.md) | What is fictional and how to replace it |
 | [Adding a component](./docs/adding-a-component.md) | The checklist for new kit components |
@@ -57,4 +60,4 @@ The same reference is browsable in the demo at `/components` (API reference sect
 ## Changing the look
 
 On the dev server click the floating **Theme** button, or open `/settings`. Edit colors, radius, fonts, widths, locale and currency
-live, then press **Save to project** (or **Copy JSON** and replace `src/config/app.config.json`). Details: [Theming](./docs/theming.md).
+live, then press **Save to project** (or **Copy JSON** and replace `src/apps/<app>/settings/app.config.json`). Details: [Theming](./docs/theming.md).

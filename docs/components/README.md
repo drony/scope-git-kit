@@ -9,6 +9,7 @@ Every component, hook and utility in the kit, with its props and a working examp
 Buttons, badges, cards, feedback and page scaffolding.
 
 - **Button**: The action button, in four variants and three sizes. ButtonLink renders a router link that looks the same.
+- **ApiReference**: A component catalog as a searchable reference: one tab per group and one expandable entry per component, with its props, an example and notes. It renders any catalog in the shape of `kit/catalog/define.ts`.
 - **Tag**: A small uppercase label for status or category.
 - **Chip**: A pill with an optional colored initial. With `onClick` it becomes a toggle button.
 - **Badge**: A bordered pill with an optional icon, for short facts such as "Read-only access".
@@ -25,6 +26,10 @@ Buttons, badges, cards, feedback and page scaffolding.
 - **Section, SectionHead, PageHero**: Page scaffolding: a bordered section in the content column, its heading block, and the large page title block.
 - **Reveal**: Fades its content up when it scrolls into view.
 - **AssetIcon**: A rounded letter tile in one of the chart colors, picked from the text.
+- **Countdown**: A countdown to a moment, as four blocks or one line. Screen readers hear the time left, not every second.
+- **Timeline**: A vertical list of events on a line: filled when done, ringed when active, hollow when upcoming.
+- **SplitPane**: Two panes with a draggable divider, for "edit on the left, preview on the right". Stacks on narrow screens.
+- **PreviewFrame**: Shows its children as a page on a phone, tablet or desktop: laid out at the real width, then scaled to fit.
 
 ## [Forms](./forms.md)
 
@@ -50,6 +55,10 @@ Tabs, segmented control, accordion, breadcrumbs, pagination, stepper and the meg
 - **Pagination**: Previous / next and numbered pages with ellipses (1 … 4 5 [6] 7 8 … 20).
 - **Stepper**: Progress through a multi-step flow.
 - **MegaMenu**: The primary navigation list with a mega panel per entry. It knows nothing about your data: entries and the side column come in as props.
+- **SiteHeader**: The sticky page header: brand, primary navigation and actions in one bar. It only lays them out.
+- **Brand**: The logo link of a header: a mark and the product name.
+- **PageBar**: The band under the header that names the page: a small label, the title and the page's actions.
+- **AuthShell**: The shell of a sign-in, sign-up or reset page: the form on the left, a calm side panel on the right.
 
 ## [Overlays](./overlays.md)
 
@@ -71,6 +80,7 @@ The simple DataTable and the editable DataGrid for finance tables.
 - **GridColumn and friends**: The types you pass to DataGrid: GridColumn, GroupOption, FilterDef, CellChange, GridHistory, GridSave, GridEvent and DataGridHandle.
 - **TryList**: A “Try the features” checklist whose steps tick themselves off as the visitor does them. Optional “Do it for me” buttons run a step for them.
 - **Signed**: Colors its content green for positive numbers and red for negative ones.
+- **SortableList**: A reorderable list. Drag the handle, or focus it and use Space and the arrow keys. Moves are announced to screen readers.
 
 ## [Charts](./charts.md)
 
@@ -116,6 +126,7 @@ Configuration, toasts, undo/redo, autosave, formatting and helpers.
 - **ConfigProvider**: Holds the live theme and site configuration, applies it as CSS variables, and exposes it through hooks. Wrap your app in it once.
 - **ToastProvider**: Transient messages in the bottom-right corner. `useToast().push(...)` shows one; it can carry a button such as Undo.
 - **useHistory**: State with undo and redo. Every `set` that changes the value is one undo step (100 are kept).
+- **useFlip**: Animates a list when its order changes: items slide from their old place to the new one. Skipped for people who prefer reduced motion.
 - **useAutosave**: Debounced autosave with a visible status and an on/off preference remembered in this browser.
 - **useEditStore**: Everything an editable table needs besides its rows: edits loaded from this browser, undo and redo, autosave, and props for DataGrid.
 - **useStoredSet**: A set of strings (ids, symbols) kept in this browser and shared across the app: change it in one place and every component reading the same key updates.
@@ -126,4 +137,87 @@ Configuration, toasts, undo/redo, autosave, formatting and helpers.
 - **useFormat**: Number, money, percent and date formatting that follows the locale and currency in the theme config.
 - **useText, useLang**: Tiny translation helper. A screen defines `{ en: {...}, tr: {...} }` and picks the dictionary that matches the site locale.
 - **Utilities**: Small helpers: class names, safe storage, public asset URLs, dates and the seeded random generator.
+
+# Contest components
+
+The contest layer (`src/contest`) builds on the kit for contest platforms: questions and answers, answer keys, media and the data behind them. It is documented the same way, from `src/contest/catalog`. See [architecture](../architecture.md) for how the layers relate.
+
+## [Questions & answers](./contest-questions.md)
+
+Write a question, set its answer key, preview it as a participant, and run the quiz.
+
+- **QuestionView**: One question as the participant sees it: type, points and timer, prompt, pictures, hint, the answer input, then the result banner.
+- **AnswerInput**: The right answer input for any question type. ChoiceAnswer, TextAnswer, NumericAnswer, OrderingAnswer, MatchingAnswer and UploadAnswer are the six inputs it picks from.
+- **QuestionComposer**: The form for one question: type, prompt, media, options, points, time limit, tags, hint and explanation. It saves nothing; it hands every change to `onChange`.
+- **AnswerOptionsEditor**: Add, remove, reorder and rename the options of a question. Each option can have a picture and a note shown after answering.
+- **AnswerKeyEditor**: The back-office editor for the answer key: right options, accepted wordings, number and tolerance, right order, matching pairs, or a rubric. It warns when the key no longer fits and has a "Try an answer" box.
+- **QuestionPreview**: The question exactly as a participant sees it, on a phone, tablet or desktop frame, with a state scrubber: open, answered, right, wrong, time up, locked.
+- **QuestionBank**: All questions in a searchable, sortable, filterable table: type, points, time, status, whether the answer key is complete, and tags.
+- **QuizRunner**: The participant's whole quiz: one question at a time, a question map, per-question timers, a save indicator, an overview before submitting, and the result afterwards.
+
+## [Media](./contest-media.md)
+
+Upload, browse, view, choose and crop pictures, sounds and video.
+
+- **MediaUploader**: Drop files or browse, and watch each one upload: it checks type, size, dimensions and length first, shows progress per file, and lets the person cancel or retry.
+- **MediaLibrary**: All uploaded files in a grid or list, with search, kind and tag filters, multiple choice, and a bulk delete that says how many questions would lose a file. MediaThumb is its small preview.
+- **MediaViewer**: One file in full: the picture (click to enlarge), a player for sound and video, a reader for PDFs, and the file's details. With `onSave` it also edits the description, caption, tags, crop and focal point.
+- **MediaPicker**: A dialog to choose files from the library, or to upload a new one on the spot. Use it behind every "Add picture" button.
+- **MediaModeration**: A wall for going through uploads quickly: arrow keys to move, A to approve, R to reject, F to flag, Z to undo.
+- **CroppedImage**: A picture shown through its saved crop, rotation and focal point. In a box of another shape it slides toward the focal point, so the subject stays in view.
+- **ImageCropper**: Crop, rotate and set a focal point without touching the file. Live square, wide and tall previews show what the focal point does.
+
+## [Announcements & notifications](./contest-communication.md)
+
+Write an announcement for the right people and channels, preview it, and show it to participants as news and as a bell.
+
+- **AnnouncementComposer**: The form for one announcement: title and message with merge fields, who gets it (with a live count), which channels, and when. It saves and sends nothing.
+- **ChannelPreview**: The same announcement as each channel shows it: a notification in the app, an e-mail, and a push on a lock screen.
+- **DeliveryStatus**: After an announcement is sent: per channel, how many people it reached, how many it missed, and why.
+- **AnnouncementFeed**: What a participant reads: the announcements that were sent, pinned ones first, then the newest.
+- **NotificationCenter**: A bell with the number of unread notifications. It opens a panel with the notifications grouped by day. NotificationItem is one row of it, also used in previews.
+
+## [Participants & scoring](./contest-people.md)
+
+Invite and manage people, review their answers, score by rubric, and show the ranking.
+
+- **ParticipantTable**: Everyone in the contest in a searchable, sortable table: status, team, how far they got and their score. Tick rows to message them together.
+- **ParticipantDrawer**: One person in a side sheet: status, a note, what they did and when, their score and rank, and a link to their answers.
+- **InviteDialog**: Paste a list of people and invite them in one go. The list is read as you type, and every line that is wrong says why.
+- **SubmissionReview**: Look at what a participant answered next to the answer key, see the points the key gave and why, and change them. Written answers and photos are scored with the rubric.
+- **RubricScorer**: Score an answer by criteria: one slider per criterion, with a running total.
+- **Leaderboard**: The ranking as a list: place with medal colours, name, a bar for the points, and an arrow for the places gained or lost. When the order changes, the rows slide to their new places.
+- **Podium**: The first three of a ranking on a podium: first in the middle and tallest, second on the left, third on the right.
+- **ScoreHeatGrid**: Who got what: a person on every row, a question in every column, each cell coloured by the share of the points it earned. The hardest question is tagged.
+
+## [Data & hooks](./contest-data.md)
+
+The backend interface, the in-memory backend, and the hooks that load and save contest data.
+
+- **ContestProvider**: Gives the data hooks their backend. Contest components themselves never read it: they take props.
+- **ContestAdapter**: Everything a contest app needs from a backend, as one typed interface. A real backend implements it; the in-memory adapter is the one that ships.
+- **createMemoryAdapter**: A ContestAdapter that keeps everything in memory and in localStorage. It behaves like a backend: calls are asynchronous, writes leave an audit trail, submissions are scored from the answer keys, and uploads report progress and can fail.
+- **useResource**: Loads one thing and keeps it in state, with `loading`, `error`, `reload` and `mutate`. The small base the other contest hooks are built on.
+- **useQuestions**: The questions, with `save` and `remove`. Needs a ContestProvider.
+- **useAnswerKeys**: The answer keys of the given questions, by question id, with `save`.
+- **useMedia**: The media library, with `upload`, `update` and `remove`. `upload` takes the same options as `MediaUploader` passes, so progress and cancel just work.
+- **useRankReplay**: What changed since I last looked, for a ranking: it shows the ranking the person saw last time, then moves to the current one, so rows slide into their new places.
+- **useMySubmission**: One participant's own submission, created on first use, with `saveAnswer` and `submit`. Submitting locks it and scores it from the keys.
+- **useContest**: The remaining read hooks: the contest itself, participants, all submissions, announcements, notifications and the audit trail. Each returns `data`, `loading`, `error` and its own save calls.
+
+## [Scoring & rules](./contest-rules.md)
+
+Pure functions: scoring, question types, upload rules and crop maths.
+
+- **scoreAnswer**: Compares one answer with its key and says how many points it earns, and why. Pure functions: the same code scores a real submission, the "Try an answer" box, and a dry run.
+- **questionTypes**: The ten question types and what to do with them: labels and icons, a blank question and key for a type, key checks, "is it answered?", converting a question to another type, and a stable shuffle.
+- **audienceOf**: Who an announcement reaches. The composer's "N people will get this" and the backend that sends use the same function. Disqualified people are never reached.
+- **renderTemplate**: Merge fields in announcements: `{{name}}`, `{{team}}` and `{{contest}}` are filled for each recipient.
+- **announcementProblems**: What stops an announcement from going out, in words: no title, no message, no channel, nobody in the audience, an unknown merge field, a schedule in the past.
+- **rankParticipants**: Rankings: everyone who submitted, best first, with ties sharing a place (1, 2, 2, 4); teams by the average of their members; and how many places each person moved between two rankings.
+- **parseInvites**: Reads a pasted list of people, one per line, and says which lines are fine and why the others are not.
+- **dayLabel**: Small date helpers for lists of messages: "Today", "Yesterday" or the date, "5 min ago", and the time of day.
+- **validateMediaFile**: Checks a file against upload rules (type, size, picture dimensions, length) and answers with a sentence a person can act on. Also formats sizes and times.
+- **mediaUsage**: How many questions use each media file, counting the prompt and every option. Feed it to MediaLibrary so a file in use says so, and a delete warns.
+- **visibleWindow**: The maths behind cropping: what part of a picture a box of a given shape shows, how a crop and a focal point turn with the picture, and how to fit a shape inside a crop. All positions are fractions of the rotated picture.
 

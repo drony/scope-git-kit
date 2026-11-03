@@ -9,8 +9,10 @@ npm run dev        # http://localhost:5173
 
 | Command | What it does |
 | --- | --- |
-| `npm run dev` | Dev server with hot reload. Shows the floating **Theme** button. |
-| `npm run build` | Runs every check, then builds into `dist/`. |
+| `npm run dev` | Dev server with hot reload for Finscope. Shows the floating **Theme** button. |
+| `npm run dev:contest` | The same for Contest Scope. |
+| `npm run build` | Runs every check, then builds Finscope into `dist/` and Contest Scope into `dist/contest/`. |
+| `npm run build:finscope`, `npm run build:contest` | Build one app. Build Finscope first: it empties `dist/`. |
 | `npm run check` | Type check, layer check and docs check, without building. |
 | `npm run docs` | Regenerates `docs/components/*.md` from the catalog. |
 | `npm run preview` | Serves the production build locally. |
@@ -39,11 +41,11 @@ resolve: { alias: { '@': path.resolve(__dirname, 'src') } }
 
 and in `tsconfig.json`: `"paths": { "@/*": ["./src/*"] }`.
 
-**4. Create your configuration** (colors, locale, currency). Copy `src/config/app.config.json` and `src/config/index.ts`, or
+**4. Create your configuration** (colors, locale, currency). Copy `src/apps/finscope/settings/app.config.json` and `src/apps/finscope/settings/index.ts`, or
 start from nothing: `mergeConfig({})` returns the kit's defaults.
 
 ```ts
-// src/config/index.ts
+// src/apps/finscope/settings/index.ts
 import raw from './app.config.json'
 import { mergeConfig } from '@/kit/theme/theme'
 export const SAVED_CONFIG = mergeConfig(raw)
@@ -59,7 +61,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { ConfigProvider } from '@/kit/context/ConfigContext'
 import { ToastProvider } from '@/kit/context/ToastContext'
 import { bootstrapTheme } from '@/kit/theme/theme'
-import { SAVED_CONFIG } from '@/config'
+import { SAVED_CONFIG } from '@/apps/finscope/settings'
 
 bootstrapTheme(SAVED_CONFIG) // before first render: no flash of default colors
 

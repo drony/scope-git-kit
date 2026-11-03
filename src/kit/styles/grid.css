@@ -243,6 +243,9 @@
   max-height: min(38rem, 78vh);
   position: relative;
 }
+.g-scroll.is-tall {
+  max-height: max(24rem, calc(100dvh - 15rem));
+}
 .g-table {
   width: 100%;
   min-width: max-content;
@@ -278,6 +281,24 @@
 .g-table thead th.g-num {
   text-align: right;
   border-left: 1px solid var(--hairline);
+}
+/* two-level header: a spanning band row above the column headings; the headings stick just below it */
+.g-table thead tr.g-band-row th {
+  height: var(--g-band-h);
+  padding-block: 0.375rem;
+  font-weight: 500;
+  color: var(--muted);
+  border-bottom: 1px solid var(--hairline);
+}
+.g-table thead th.g-band {
+  text-align: center;
+  border-left: 1px solid var(--hairline);
+}
+.g-table.has-band {
+  --g-band-h: 2.25rem;
+}
+.g-table.has-band thead tr:not(.g-band-row) th {
+  top: var(--g-band-h);
 }
 .g-table thead th.is-focus {
   box-shadow: inset 0 2px 0 var(--accent);
@@ -317,6 +338,19 @@
 .g-sticky {
   position: sticky;
   z-index: 2;
+}
+/* Bare mode: a quiet table. The check column takes no room, so the pinned name column sits at the left edge. */
+.grid-card.is-bare {
+  --c0: 0px;
+}
+.is-bare .g-check-col,
+.is-bare .g-toolbar,
+.is-bare .g-chips,
+.is-bare .g-pager {
+  display: none;
+}
+.is-bare .g-foot:not(:has(.g-selection)) {
+  display: none;
 }
 .g-check-col {
   left: 0;
@@ -756,4 +790,17 @@
 }
 .g-spark .eyebrow {
   margin: 0;
+}
+
+/* printing: show every row instead of the scrolling window, and let the sticky parts flow */
+@media print {
+  .g-scroll,
+  .g-scroll.is-tall {
+    max-height: none;
+    overflow: visible;
+  }
+  .g-table thead th,
+  .g-table .g-sticky {
+    position: static;
+  }
 }

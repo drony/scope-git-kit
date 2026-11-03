@@ -1,19 +1,21 @@
 #!/usr/bin/env node
 /**
- * Builds docs/components/*.md from the component catalog (src/kit/catalog) and checks the catalog against the code.
+ * Builds docs/components/*.md from the component catalogs (src/kit/catalog and src/contest/catalog) and checks each
+ * catalog against its code.
  *
  *   npm run docs         writes the files
  *   npm run docs:check   fails if a file is out of date, or the catalog and the code disagree (used by `npm run check`)
  *
  * It checks that: every entry points at a real source file; every documented prop name still appears in that file;
- * every exported component and hook is documented; every documented export still exists.
+ * every exported component and hook of the layer is documented; every documented export still exists.
  * Run with Node 22.18 or newer (it reads TypeScript directly).
  */
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { CONTEST_DOCS, CONTEST_GROUPS } from '../src/contest/catalog/index.ts'
 import { DOCS, GROUPS, importStatement } from '../src/kit/catalog/index.ts'
-import type { ComponentDoc } from '../src/kit/catalog/index.ts'
+import type { ComponentDoc, GroupDoc } from '../src/kit/catalog/define.ts'
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const src = path.join(root, 'src')
@@ -23,6 +25,20 @@ const checkOnly = process.argv.includes('--check')
 /** Exported names that are deliberately not documented: internal helpers of a documented component. */
 const INTERNAL = new Set(['useWidth', 'useGridText'])
 
+/** One catalog and the layer of code it describes. */
+interface Catalog {
+  /** The layer folder under src/, e.g. `kit`. */
+  layer: string
+  docs: ComponentDoc<string>[]
+  groups: GroupDoc<string>[]
+  /** Prepended to every generated file name, so two catalogs share one folder. */
+  filePrefix: string
+}
+const CATALOGS: Catalog[] = [
+  { layer: 'kit', docs: DOCS, groups: GROUPS, filePrefix: '' },
+  { layer: 'contest', docs: CONTEST_DOCS, groups: CONTEST_GROUPS, filePrefix: 'contest-' },
+]
+
 const walk = (dir: string): string[] =>
   fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]))
 const read = (rel: string) => fs.readFileSync(path.join(src, rel), 'utf8')
@@ -30,60 +46,64 @@ const read = (rel: string) => fs.readFileSync(path.join(src, rel), 'utf8')
 /* ---- checks -------------------------------------------------------------------------------- */
 
 const problems: string[] = []
-const kitFiles = walk(path.join(src, 'kit')).filter((f) => /\.(ts|tsx)$/.test(f) && !f.includes(`${path.sep}catalog${path.sep}`))
 
-const exportedNames = new Set<string>()
-const needDocs = new Set<string>()
-for (const file of kitFiles) {
-  const text = fs.readFileSync(file, 'utf8')
-  const rel = path.relative(src, file).split(path.sep).join('/')
-  for (const m of text.matchAll(/^export (?:function|const|class) (\w+)/gm)) {
-    exportedNames.add(m[1])
-    const isComponent = /^[A-Z]/.test(m[1]) && /^kit\/(components|context)\/.+\.tsx$/.test(rel)
-    const isHook = /^use[A-Z]/.test(m[1])
-    if ((isComponent || isHook) && !INTERNAL.has(m[1])) needDocs.add(m[1])
-  }
-}
+for (const cat of CATALOGS) {
+  const layerFiles = walk(path.join(src, cat.layer)).filter((f) => /\.(ts|tsx)$/.test(f) && !f.includes(`${path.sep}catalog${path.sep}`))
+  const componentFile = new RegExp(`^${cat.layer}/(components|context)/.+\\.tsx$`)
 
-const ids = new Set<string>()
-const documented = new Set<string>()
-const groupIds = new Set(GROUPS.map((g) => g.id))
-for (const doc of DOCS) {
-  const where = `catalog entry "${doc.name}"`
-  if (ids.has(doc.id)) problems.push(`${where}: duplicate id "${doc.id}"`)
-  ids.add(doc.id)
-  if (!groupIds.has(doc.group)) problems.push(`${where}: unknown group "${doc.group}"`)
-  if (!fs.existsSync(path.join(src, doc.source))) {
-    problems.push(`${where}: source file src/${doc.source} does not exist`)
-    continue
+  const exportedNames = new Set<string>()
+  const needDocs = new Set<string>()
+  for (const file of layerFiles) {
+    const text = fs.readFileSync(file, 'utf8')
+    const rel = path.relative(src, file).split(path.sep).join('/')
+    for (const m of text.matchAll(/^export (?:async )?(?:function|const|class) (\w+)/gm)) {
+      exportedNames.add(m[1])
+      const isComponent = /^[A-Z]/.test(m[1]) && componentFile.test(rel)
+      const isHook = /^use[A-Z]/.test(m[1])
+      if ((isComponent || isHook) && !INTERNAL.has(m[1])) needDocs.add(m[1])
+    }
   }
-  for (const name of doc.exports ?? [doc.name]) {
-    documented.add(name)
-    if (doc.kind !== 'type' && !exportedNames.has(name)) problems.push(`${where}: documented export "${name}" is not exported anywhere in the kit`)
-  }
-  if (doc.kind !== 'utility') {
-    const text = read(doc.source)
-    for (const p of doc.props ?? []) {
-      if (!new RegExp(`\\b${p.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(text)) {
-        problems.push(`${where}: prop "${p.name}" does not appear in src/${doc.source}`)
+
+  const ids = new Set<string>()
+  const documented = new Set<string>()
+  const groupIds = new Set(cat.groups.map((g) => g.id))
+  for (const doc of cat.docs) {
+    const where = `${cat.layer} catalog entry "${doc.name}"`
+    if (ids.has(doc.id)) problems.push(`${where}: duplicate id "${doc.id}"`)
+    ids.add(doc.id)
+    if (!groupIds.has(doc.group)) problems.push(`${where}: unknown group "${doc.group}"`)
+    if (!fs.existsSync(path.join(src, doc.source))) {
+      problems.push(`${where}: source file src/${doc.source} does not exist`)
+      continue
+    }
+    for (const name of doc.exports ?? [doc.name]) {
+      documented.add(name)
+      if (doc.kind !== 'type' && !exportedNames.has(name)) problems.push(`${where}: documented export "${name}" is not exported anywhere in src/${cat.layer}`)
+    }
+    if (doc.kind !== 'utility') {
+      const text = read(doc.source)
+      for (const p of doc.props ?? []) {
+        if (!new RegExp(`\\b${p.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(text)) {
+          problems.push(`${where}: prop "${p.name}" does not appear in src/${doc.source}`)
+        }
       }
     }
   }
+  for (const name of needDocs) if (!documented.has(name)) problems.push(`"${name}" is exported by src/${cat.layer} but missing from the catalog (src/${cat.layer}/catalog)`)
 }
-for (const name of needDocs) if (!documented.has(name)) problems.push(`"${name}" is exported by the kit but missing from the catalog (src/kit/catalog)`)
 
 /* ---- markdown ------------------------------------------------------------------------------- */
 
-const HEADER = '<!-- Generated by `npm run docs` from src/kit/catalog. Do not edit by hand: change the catalog instead. -->\n\n'
+const header = (layer: string) => `<!-- Generated by \`npm run docs\` from src/${layer}/catalog. Do not edit by hand: change the catalog instead. -->\n\n`
 const cell = (text: string) => text.replace(/\|/g, '\\|').replace(/\n/g, ' ')
 
-function importLine(doc: ComponentDoc): string {
+function importLine(doc: ComponentDoc<string>): string {
   const statement = importStatement(doc)
   const fence = '```'
   return statement ? `${fence}ts\n${statement}\n${fence}\n\n` : ''
 }
 
-function entry(doc: ComponentDoc): string {
+function entry(doc: ComponentDoc<string>): string {
   let md = `### ${doc.name}\n\n${doc.summary}\n\n${importLine(doc)}`
   if (doc.props?.length) {
     const label = doc.kind === 'hook' || doc.kind === 'utility' ? 'Parameter' : 'Prop'
@@ -99,19 +119,30 @@ function entry(doc: ComponentDoc): string {
 }
 
 const files = new Map<string, string>()
-for (const group of GROUPS) {
-  const docs = DOCS.filter((d) => d.group === group.id)
-  if (!docs.length) continue
-  const toc = docs.map((d) => `[${d.name}](#${d.name.toLowerCase().replace(/[^a-z0-9 -]/g, '').trim().replace(/ +/g, '-')})`).join(' · ')
-  files.set(`${group.id}.md`, `${HEADER}# ${group.title}\n\n${group.description}\n\n${toc}\n\n${docs.map(entry).join('')}`.trimEnd() + '\n')
+for (const cat of CATALOGS) {
+  for (const group of cat.groups) {
+    const docs = cat.docs.filter((d) => d.group === group.id)
+    if (!docs.length) continue
+    const toc = docs.map((d) => `[${d.name}](#${d.name.toLowerCase().replace(/[^a-z0-9 -]/g, '').trim().replace(/ +/g, '-')})`).join(' · ')
+    files.set(`${cat.filePrefix}${group.id}.md`, `${header(cat.layer)}# ${group.title}\n\n${group.description}\n\n${toc}\n\n${docs.map(entry).join('')}`.trimEnd() + '\n')
+  }
 }
+
+const section = (cat: Catalog) =>
+  cat.groups
+    .map((g) => {
+      const docs = cat.docs.filter((d) => d.group === g.id)
+      return `## [${g.title}](./${cat.filePrefix}${g.id}.md)\n\n${g.description}\n\n${docs.map((d) => `- **${d.name}**: ${d.summary}`).join('\n')}\n`
+    })
+    .join('\n')
+const [kitCatalog, contestCatalog] = CATALOGS
 const index =
-  `${HEADER}# Component reference\n\nEvery component, hook and utility in the kit, with its props and a working example. ` +
+  `${header('kit')}# Component reference\n\nEvery component, hook and utility in the kit, with its props and a working example. ` +
   `The same data powers the API reference on the demo's /components page.\n\n` +
-  GROUPS.map((g) => {
-    const docs = DOCS.filter((d) => d.group === g.id)
-    return `## [${g.title}](./${g.id}.md)\n\n${g.description}\n\n${docs.map((d) => `- **${d.name}**: ${d.summary}`).join('\n')}\n`
-  }).join('\n') +
+  section(kitCatalog) +
+  `\n# Contest components\n\nThe contest layer (\`src/contest\`) builds on the kit for contest platforms: questions and answers, answer keys, ` +
+  `media and the data behind them. It is documented the same way, from \`src/contest/catalog\`. See [architecture](../architecture.md) for how the layers relate.\n\n` +
+  section(contestCatalog) +
   '\n'
 files.set('README.md', index)
 
@@ -132,4 +163,5 @@ if (problems.length) {
   console.error(`Docs check failed (${problems.length}):\n${problems.map((p) => `  - ${p}`).join('\n')}`)
   process.exit(1)
 }
-console.log(checkOnly ? `Docs are up to date (${DOCS.length} entries).` : `Wrote ${files.size} files to docs/components from ${DOCS.length} catalog entries.`)
+const entries = CATALOGS.reduce((n, c) => n + c.docs.length, 0)
+console.log(checkOnly ? `Docs are up to date (${entries} entries).` : `Wrote ${files.size} files to docs/components from ${entries} catalog entries.`)

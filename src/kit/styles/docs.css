@@ -1,0 +1,112 @@
+/* The API reference: a catalog rendered as expandable entries with a props table, an example and notes. */
+
+.api-list {
+  display: grid;
+  gap: 0.75rem;
+}
+.api-entry {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.api-entry > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  padding: 0.875rem 1.25rem;
+  cursor: pointer;
+  list-style: none;
+}
+.api-entry > summary::-webkit-details-marker {
+  display: none;
+}
+.api-entry > summary::before {
+  content: '';
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: rotate(-45deg);
+  transition: transform 0.15s var(--ease);
+  align-self: center;
+}
+.api-entry[open] > summary::before {
+  transform: rotate(45deg);
+}
+.api-entry > summary strong {
+  color: var(--ink);
+  font-size: 0.9375rem;
+}
+.api-summary {
+  flex: 1 1 18rem;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+.api-body {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem 1.25rem 1.25rem;
+  border-top: 1px solid var(--line);
+  min-width: 0;
+}
+.api-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+.api-table th,
+.api-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--hairline);
+}
+.api-table th {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.api-table tr:last-child td {
+  border-bottom: 0;
+}
+.api-table code {
+  font-size: 0.75rem;
+  color: var(--ink);
+}
+.api-table td:nth-child(2) code {
+  color: var(--accent-strong);
+  overflow-wrap: anywhere;
+}
+.api-req {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--error);
+}
+.api-notes {
+  display: grid;
+  gap: 0.375rem;
+}
+.api-notes li {
+  position: relative;
+  padding-left: 0.875rem;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+.api-notes li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.5625rem;
+  width: 0.3125rem;
+  height: 0.3125rem;
+  border-radius: 999px;
+  background: var(--line-strong);
+}
+

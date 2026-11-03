@@ -11,7 +11,7 @@ function useObjectUrls(files: File[]) {
 }
 
 /** Returns accepted files and a message for the first rejected one. */
-function filterFiles(list: FileList | File[], accept: string, maxMb: number) {
+export function filterFiles(list: FileList | File[], accept: string, maxMb: number) {
   const accepted: File[] = []
   let error: string | undefined
   const rules = accept.split(',').map((s) => s.trim())

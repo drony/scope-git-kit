@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "site": {
+    "name": "Contest Scope",
+    "tagline": "Questions, answers and a little friendly rivalry.",
+    "locale": "en-US",
+    "currency": "USD",
+    "weekStartsOn": 1,
+    "supportEmail": "help@contestscope.example"
+  },
+  "theme": {
+    "mode": "light",
+    "colors": {
+      "light": {
+        "canvas": "#f7f6fb",
+        "surface": "#ffffff",
+        "soft": "#f3f1fa",
+        "hairline": "#efedf7",
+        "line": "#e2dff0",
+        "lineStrong": "#9b94b8",
+        "ink": "#1d1a33",
+        "body": "#4a4666",
+        "muted": "#6b6788",
+        "primary": "#4338ca",
+        "primaryText": "#ffffff",
+        "accent": "#6d28d9",
+        "success": "#12a05c",
+        "warning": "#f59e0b",
+        "error": "#e11d48",
+        "terminal": "#1d1a33"
+      },
+      "dark": {
+        "canvas": "#0f0d1f",
+        "surface": "#17142b",
+        "soft": "#120f24",
+        "hairline": "#1f1b38",
+        "line": "#2c2750",
+        "lineStrong": "#6b63a3",
+        "ink": "#efedff",
+        "body": "#b5b0d8",
+        "muted": "#9690c0",
+        "primary": "#8b83ff",
+        "primaryText": "#0f0d1f",
+        "accent": "#b69cff",
+        "success": "#34d399",
+        "warning": "#fbbf24",
+        "error": "#fb7185",
+        "terminal": "#0a0818"
+      }
+    },
+    "gradient": ["#6366f1", "#8b5cf6", "#d946ef", "#f43f5e", "#f59e0b", "#fcd34d"],
+    "chart": ["#6366f1", "#f59e0b", "#10b981", "#f43f5e", "#06b6d4"],
+    "style": {
+      "radius": 14,
+      "shell": 1120,
+      "shellWide": 1360,
+      "navHeight": 80,
+      "shadow": "lifted",
+      "font": "inter"
+    }
+  }
+}

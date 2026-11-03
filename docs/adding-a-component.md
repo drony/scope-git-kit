@@ -5,7 +5,7 @@ A short checklist, in the order you will need it. Existing components in `src/ki
 ## 1. Decide where it goes
 
 - A control, display or behavior that has **no knowledge of finance, this demo or its data** goes in `src/kit/components/<family>`.
-- Anything that needs seed data, demo routes or demo copy goes in `src/demo` and uses kit components.
+- Anything that needs seed data, demo routes or demo copy goes in an app (`src/apps/<app>`) and uses kit components.
 
 Families: `ui`, `forms`, `nav`, `overlays`, `data`, `grid`, `charts`, `calendar`, `media`, `theme`.
 
@@ -50,7 +50,7 @@ component is not documented.
 
 ## 5. Show it on the /components page
 
-Add a small live example to the matching section of `src/demo/pages/Components.tsx`. The API reference at the bottom of that
+Add a small live example to the matching section of `src/apps/finscope/pages/Components.tsx`. The API reference at the bottom of that
 page is generated from the catalog, so you only add the live demo.
 
 ## 6. Run the checks

@@ -1,0 +1,621 @@
+/* A question as the participant sees it, its answer inputs, the question bank and the preview screen. */
+
+/* ---- QuestionView ---- */
+.cs-question {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.cs-question-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.cs-question-head .tag svg {
+  width: 0.8125rem;
+  height: 0.8125rem;
+}
+.cs-question-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.cs-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  background: var(--hairline);
+  color: var(--ink);
+  font-weight: 600;
+}
+.cs-timer svg {
+  width: 0.8125rem;
+  height: 0.8125rem;
+}
+.cs-timer.is-low {
+  background: var(--answer-wrong-soft);
+  color: var(--answer-wrong);
+}
+.cs-prompt {
+  font-size: 1.1875rem;
+  line-height: 1.4;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.cs-prompt em {
+  color: var(--muted);
+  font-weight: 400;
+}
+.cs-attachments {
+  display: grid;
+  gap: 0.75rem;
+}
+.cs-attachments img,
+.cs-attachments video {
+  width: 100%;
+  max-height: 20rem;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--hairline);
+}
+.cs-attachments audio {
+  width: 100%;
+}
+.cs-hint {
+  font-size: 0.875rem;
+  color: var(--body);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  background: var(--surface);
+}
+.cs-hint summary {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--ink);
+}
+.cs-hint summary svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  color: var(--accent);
+}
+.cs-hint[open] summary {
+  margin-bottom: 0.375rem;
+}
+.cs-banner {
+  display: flex;
+  gap: 0.625rem;
+  align-items: flex-start;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--hairline);
+  font-size: 0.875rem;
+}
+.cs-banner svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex: none;
+  margin-top: 0.0625rem;
+}
+.cs-banner strong {
+  color: var(--ink);
+}
+.cs-banner p {
+  margin-top: 0.25rem;
+  color: var(--body);
+}
+.cs-banner.is-right {
+  background: var(--answer-right-soft);
+  border-color: var(--answer-right);
+}
+.cs-banner.is-right svg {
+  color: var(--answer-right);
+}
+.cs-banner.is-wrong {
+  background: var(--answer-wrong-soft);
+  border-color: var(--answer-wrong);
+}
+.cs-banner.is-wrong svg {
+  color: var(--answer-wrong);
+}
+
+/* ---- Choice ---- */
+.cs-choices {
+  display: grid;
+  gap: 0.5rem;
+}
+.cs-choices.is-pictures {
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+.cs-choice {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 0.9375rem;
+  color: var(--ink);
+  transition:
+    border-color 0.12s var(--ease),
+    background 0.12s var(--ease),
+    box-shadow 0.12s var(--ease);
+}
+.cs-choice:hover:not(.is-disabled) {
+  border-color: var(--accent);
+}
+.cs-choice:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.cs-choice input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+.cs-choice::before {
+  content: '';
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  transition:
+    background 0.12s var(--ease),
+    border-color 0.12s var(--ease),
+    box-shadow 0.12s var(--ease);
+}
+.cs-choices[role='group'] .cs-choice::before {
+  border-radius: 5px;
+}
+.cs-choice.is-checked {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.cs-choice.is-checked::before {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: inset 0 0 0 3px var(--surface);
+}
+.cs-choices[role='group'] .cs-choice.is-checked::before {
+  box-shadow: none;
+  background: var(--accent) center / 0.75rem no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8.5l3.2 3.2L13 4.5'/%3E%3C/svg%3E");
+}
+.cs-choice.is-disabled {
+  cursor: default;
+}
+.cs-choice.is-disabled input {
+  cursor: default;
+}
+.cs-choice.is-right {
+  border-color: var(--answer-right);
+  background: var(--answer-right-soft);
+  box-shadow: 0 0 0 1px var(--answer-right);
+}
+.cs-choice.is-right::before {
+  border-color: var(--answer-right);
+  background: var(--answer-right);
+}
+.cs-choice.is-wrong {
+  border-color: var(--answer-wrong);
+  background: var(--answer-wrong-soft);
+  box-shadow: 0 0 0 1px var(--answer-wrong);
+}
+.cs-choice.is-wrong::before {
+  border-color: var(--answer-wrong);
+  background: var(--answer-wrong);
+}
+.cs-choice-text {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+  flex: 1;
+}
+.cs-choice-text small {
+  color: var(--body);
+  font-size: 0.8125rem;
+}
+.cs-choice-mark {
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+.cs-choice.is-right .cs-choice-mark {
+  color: var(--answer-right);
+}
+.cs-choice.is-wrong .cs-choice-mark {
+  color: var(--answer-wrong);
+}
+.cs-choices.is-pictures .cs-choice {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0.5rem;
+  text-align: center;
+}
+.cs-choices.is-pictures .cs-choice::before {
+  position: absolute;
+  top: 0.875rem;
+  left: 0.875rem;
+  z-index: 1;
+}
+.cs-choices.is-pictures .cs-choice img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: calc(var(--radius) - 4px);
+  background: var(--hairline);
+}
+.cs-choices.is-pictures .cs-choice-mark {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+}
+
+/* ---- Text, number, upload ---- */
+.cs-text {
+  display: grid;
+  gap: 0.375rem;
+}
+.cs-count {
+  justify-self: end;
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.cs-reveal {
+  font-size: 0.8125rem;
+  color: var(--body);
+}
+.cs-upload {
+  display: grid;
+  gap: 0.75rem;
+}
+.cs-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.cs-thumbs li {
+  position: relative;
+  width: 5rem;
+  height: 5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--hairline);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  font-size: 0.6875rem;
+  color: var(--muted);
+}
+.cs-thumbs img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cs-thumbs button,
+.cs-attach button {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  display: grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 80%, transparent);
+  color: var(--surface);
+  cursor: pointer;
+}
+.cs-thumbs button svg,
+.cs-attach button svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+/* ---- Ordering and matching ---- */
+.cs-ordering {
+  display: grid;
+  gap: 0.625rem;
+  justify-items: start;
+}
+.cs-ordering .sortable {
+  width: 100%;
+}
+.cs-ordering .sortable-item {
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  padding: 0.5rem 0.75rem 0.5rem 0.5rem;
+}
+.cs-order-row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: 0.9375rem;
+  color: var(--ink);
+}
+.cs-order-n {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.cs-matching,
+.cs-key-match {
+  display: grid;
+  gap: 0.5rem;
+}
+.cs-match-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 0.9375rem;
+  color: var(--ink);
+}
+.cs-match-row small {
+  grid-column: 1 / -1;
+}
+.cs-match-row.is-right {
+  border-color: var(--answer-right);
+  background: var(--answer-right-soft);
+}
+.cs-match-row.is-wrong {
+  border-color: var(--answer-wrong);
+  background: var(--answer-wrong-soft);
+}
+@media (max-width: 480px) {
+  .cs-match-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- Preview screen (inside PreviewFrame) ---- */
+.cs-screen {
+  min-height: 100%;
+  background: var(--canvas);
+  color: var(--body);
+}
+.cs-screen-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 0.8125rem;
+  color: var(--ink);
+}
+.cs-screen > .cs-question {
+  padding: 1.25rem;
+}
+
+/* ---- Question bank ---- */
+.cs-bank-open {
+  display: block;
+  max-width: 32rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cs-bank-open:hover {
+  color: var(--accent-strong);
+  text-decoration: underline;
+}
+.cs-bank-open[aria-current='true'] {
+  color: var(--accent-strong);
+}
+.cs-bank-actions {
+  display: inline-flex;
+  gap: 0.125rem;
+}
+
+/* ---- QuizRunner ---- */
+.cs-runner {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.cs-runner-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.cs-runner-head h2 {
+  font-size: 1.125rem;
+  letter-spacing: -0.01em;
+}
+.cs-runner-head p {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.cs-save {
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.cs-save.is-saving {
+  color: var(--accent-strong);
+}
+.cs-runner-map {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+.cs-runner-dot {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--body);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background 0.12s var(--ease),
+    border-color 0.12s var(--ease);
+}
+.cs-runner-dot:hover {
+  border-color: var(--accent);
+}
+.cs-runner-dot.is-answered {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent-strong);
+}
+.cs-runner-dot.is-correct {
+  background: var(--answer-right-soft);
+  border-color: var(--answer-right);
+  color: var(--success-text);
+}
+.cs-runner-dot.is-wrong,
+.cs-runner-dot.is-timeout {
+  background: var(--answer-wrong-soft);
+  border-color: var(--answer-wrong);
+  color: var(--answer-wrong);
+}
+.cs-runner-dot.is-current {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.cs-runner-dot svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+.cs-runner-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
+}
+.cs-runner-note {
+  font-size: 0.8125rem;
+  color: var(--body);
+}
+.cs-runner-overview {
+  display: grid;
+  gap: 1rem;
+}
+.cs-runner-result {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.cs-runner-result strong {
+  font-size: 2.25rem;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.cs-runner-result strong span {
+  font-size: 0.9375rem;
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+.cs-runner-list {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cs-runner-list button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+}
+.cs-runner-list button:hover {
+  border-color: var(--accent);
+}
+.cs-runner-list-prompt {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cs-runner-list-state {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+.cs-runner-list-state.is-yes {
+  color: var(--success-text);
+}
+.cs-runner-list-state.is-no {
+  color: var(--muted);
+}
+
+/* The state scrubber scrolls sideways on a narrow screen instead of widening the page. */
+.cs-preview-states {
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}

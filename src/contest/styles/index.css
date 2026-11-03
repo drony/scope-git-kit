@@ -1,0 +1,8 @@
+/* Styles of the contest component family. Each component group adds its own file here. */
+@import './contest.css';
+@import './question.css';
+@import './composer.css';
+@import './media.css';
+@import './communication.css';
+@import './people.css';
+@import './scoring.css';

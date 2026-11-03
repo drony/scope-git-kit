@@ -55,7 +55,7 @@ import { Input, TextField, PasswordField, Textarea, SearchInput } from '@/kit/co
 ```
 
 - Every native input attribute is passed through, and refs are forwarded.
-- PasswordField has a show/hide button; SearchInput has a clear button once there is text.
+- PasswordField has a show/hide button; its label and button text follow the site locale (English or Turkish). SearchInput has a clear button once there is text.
 
 ### Select
 
