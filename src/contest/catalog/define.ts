@@ -6,6 +6,6 @@ import type { ComponentDoc, GroupDoc } from '../../kit/catalog/define.ts'
 
 export { prop } from '../../kit/catalog/define.ts'
 
-export type ContestGroupId = 'questions' | 'media' | 'communication' | 'people' | 'data' | 'rules'
+export type ContestGroupId = 'questions' | 'review' | 'audit' | 'media' | 'communication' | 'people' | 'packs' | 'moderation' | 'versions' | 'weekly' | 'program' | 'live' | 'surveys' | 'data' | 'rules'
 export type ContestDoc = ComponentDoc<ContestGroupId>
 export type ContestGroupDoc = GroupDoc<ContestGroupId>

@@ -1,5 +1,13 @@
 import { storage } from '@/kit/lib/storage'
 import { audienceOf } from '../lib/audience'
+import { episodeResultOf, liveReduce, openLobby, tick, type LiveContext } from '../lib/live'
+import { allowed, defaultPrefs } from '../lib/prefs'
+import { ACTIONS, DEFAULT_POLICY, applyReview, stageOf, statusFor, type ReviewPolicy } from '../lib/review'
+import { dueReminders } from '../lib/reminders'
+import { ACTIONS as MODERATION_ACTIONS, REASONS, activeSuspension, applyDecision, decisionProblem, groupReports } from '../lib/moderation'
+import { activePack, buildPack, packProblems, restoreItems } from '../lib/packs'
+import { canPlay, gateInForce, gateProblems, reviewGate, storeName, verdictFor } from '../lib/gate'
+import { impactOf, occurrences, programChecks, worstSeverity } from '../lib/program'
 import { isPending } from '../lib/ranking'
 import { scoreSubmission } from '../lib/scoring'
 import { renderTemplate } from '../lib/templates'
@@ -9,14 +17,18 @@ import type {
   Answer,
   AnswerKey,
   AuditEntry,
+  Channel,
   Contest,
   ContestState,
   Id,
   MediaAsset,
   MediaKind,
   Notification,
+  NotificationCategory,
+  NotificationPrefs,
   Participant,
   Question,
+  ReviewAction,
   Score,
   Submission,
 } from './types'
@@ -29,8 +41,10 @@ export interface MemoryAdapterOptions {
   /** Share of uploads (0 to 1) that fail at the end, to see the error and retry states. */
   uploadFailureRate?: number
   now?: () => Date
-  /** Name written into the audit trail when a call does not pass one. */
+  /** Name written into the audit trail when a call does not pass one. It is also who a review action is done by. */
   actor?: string
+  /** The rules of the question review: one or two reviewers, and how many days make a waiting question stale. */
+  reviewPolicy?: ReviewPolicy
 }
 
 export type MemoryAdapter = ContestAdapter & {
@@ -72,14 +86,15 @@ const abortError = () => new DOMException('The upload was cancelled.', 'AbortErr
  * report progress and can fail. Use it for demos and tests; swap in a real adapter for production.
  */
 export function createMemoryAdapter(seed: ContestState, options: MemoryAdapterOptions = {}): MemoryAdapter {
-  const { storageKey = 'contest.state', latencyMs = 120, now = () => new Date(), actor: defaultActor = 'Admin' } = options
+  const { storageKey = 'contest.state', latencyMs = 120, now = () => new Date(), actor: defaultActor = 'Admin', reviewPolicy = DEFAULT_POLICY } = options
   let failureRate = options.uploadFailureRate ?? 0
 
   const load = (): ContestState => {
     const raw = storageKey ? storage.get(storageKey) : null
     if (raw) {
       try {
-        return JSON.parse(raw) as ContestState
+        const saved = JSON.parse(raw) as Partial<ContestState>
+        return { ...clone(seed), ...saved, episodes: saved.episodes ?? [], surveys: saved.surveys ?? [], surveyResponses: saved.surveyResponses ?? [], prefs: saved.prefs ?? [], live: saved.live ?? null } as ContestState
       } catch {
         /* fall through to the seed */
       }
@@ -100,6 +115,29 @@ export function createMemoryAdapter(seed: ContestState, options: MemoryAdapterOp
     state.audit.unshift({ id: nextId('au'), at: iso(), ...entry, actor: entry.actor ?? defaultActor })
   }
 
+  /** A gate that was scheduled becomes the gate in force when its time comes. */
+  const promoteGate = () => {
+    if (state.nextGate && gateInForce(state.gate, state.nextGate, now().getTime()) === state.nextGate) {
+      state.gate = state.nextGate
+      state.nextGate = undefined
+      persist()
+    }
+  }
+
+  /** One review action on one question. Throws a sentence a person can read when it cannot be done. */
+  const reviewOne = (id: Id, action: ReviewAction, who: string, note?: string) => {
+    const i = state.questions.findIndex((q) => q.id === id)
+    if (i < 0) throw new Error('The question no longer exists.')
+    const before = state.questions[i]
+    if (action === 'withdraw' || action === 'trash') {
+      const show = state.episodes.find((e) => e.status !== 'finished' && e.slots.some((s) => s.kind === 'question' && s.questionId === id))
+      if (show) throw new Error(`It is in ${show.title}, which is ${show.status}. Take it out of the line-up first.`)
+    }
+    const next = applyReview(before, action, { actor: who, policy: reviewPolicy }, now().getTime(), state.answerKeys[id], note)
+    state.questions[i] = next
+    log({ actor: who, entity: 'question', entityId: id, action: action === 'approve' ? 'publish' : 'update', summary: `${ACTIONS[action].past}: "${short(before.prompt)}"`, before: clone(before), after: clone(next) })
+  }
+
   const submissionFor = (participantId: Id): Submission => {
     let sub = state.submissions.find((s) => s.participantId === participantId)
     if (!sub) {
@@ -109,34 +147,79 @@ export function createMemoryAdapter(seed: ContestState, options: MemoryAdapterOp
     return sub
   }
 
-  /** Sends an announcement now: one in-app notification per recipient, and a count per channel. */
+  const prefsOf = (id: Id): NotificationPrefs => state.prefs.find((p) => p.participantId === id) ?? defaultPrefs(id)
+  const varsOf = (p: Participant) => ({ name: p.name.split(' ')[0], team: p.team ?? '', contest: state.contest.title })
+
+  /**
+   * Sends one message to a group of people over some channels, honouring each person's preferences. In-app messages become
+   * notifications. Returns how many people each channel reached, missed, held back (quiet hours, digest) or skipped (turned off).
+   */
+  const deliver = (people: Participant[], channels: Channel[], category: NotificationCategory, critical: boolean, make: (p: Participant) => Omit<Notification, 'id' | 'recipientId' | 'createdAt'>, at: string) => {
+    const delivery: NonNullable<Announcement['delivery']> = {}
+    for (const channel of channels) {
+      let sent = 0
+      let failed = 0
+      let held = 0
+      let skipped = 0
+      for (const p of people) {
+        const verdict = allowed(prefsOf(p.id), category, channel, new Date(at), critical)
+        if (verdict === 'off') skipped += 1
+        else if (verdict === 'held') held += 1
+        // Push needs a device, and a person who was invited but never opened the app has none.
+        else if (channel === 'push' && p.status === 'invited') failed += 1
+        else {
+          sent += 1
+          if (channel === 'in-app') state.notifications.unshift({ id: nextId('n'), recipientId: p.id, createdAt: at, ...make(p) })
+        }
+      }
+      delivery[channel] = {
+        sent,
+        failed,
+        ...(held ? { held } : {}),
+        ...(skipped ? { skipped } : {}),
+        ...(failed ? { reason: 'Invited but never opened the app, so there is no device to notify.' } : held ? { reason: 'Held for quiet hours or the daily digest.' } : {}),
+      }
+    }
+    return delivery
+  }
+
+  /** Sends an announcement now. */
   const send = (a: Announcement, actor?: string) => {
     const ids = audienceOf(a.audience, state.participants, state.submissions)
     const people = ids.flatMap((id) => state.participants.filter((p) => p.id === id))
     a.status = 'sent'
     a.sentAt = iso()
     a.scheduledAt = undefined
-    const delivery: NonNullable<Announcement['delivery']> = {}
-    for (const channel of a.channels) {
-      // Push needs a device, and a person who was invited but never opened the app has none.
-      const missed = channel === 'push' ? people.filter((p) => p.status === 'invited').length : 0
-      delivery[channel] = { sent: people.length - missed, failed: missed, ...(missed ? { reason: 'Invited but never opened the app, so there is no device to notify.' } : {}) }
-    }
-    a.delivery = delivery
-    if (a.channels.includes('in-app')) {
-      for (const p of people) {
-        const vars = { name: p.name.split(' ')[0], team: p.team ?? '', contest: state.contest.title }
-        state.notifications.unshift({ id: nextId('n'), recipientId: p.id, kind: 'announcement', title: renderTemplate(a.title, vars), body: renderTemplate(a.body, vars), createdAt: a.sentAt, href: '/announcements' })
-      }
-    }
+    a.delivery = deliver(people, a.channels, 'announcement', false, (p) => ({ kind: 'announcement', title: renderTemplate(a.title, varsOf(p)), body: renderTemplate(a.body, varsOf(p)), href: '/announcements' }), a.sentAt)
     log({ actor, entity: 'announcement', entityId: a.id, action: 'publish', summary: `Sent announcement "${short(a.title)}" to ${people.length} ${people.length === 1 ? 'person' : 'people'}` })
   }
 
-  /** There is no timer here: a scheduled announcement that is due goes out the next time someone reads. */
+  /**
+   * There is no timer here: scheduled announcements and show reminders that are due go out the next time someone reads.
+   * A reminder reaches everybody who is not disqualified, over the channels it names.
+   */
   const sendDue = () => {
-    const due = state.announcements.filter((a) => a.status === 'scheduled' && a.scheduledAt && a.scheduledAt <= iso())
-    for (const a of due) send(a, 'Scheduler')
-    if (due.length) persist()
+    let changed = false
+    for (const a of state.announcements.filter((x) => x.status === 'scheduled' && x.scheduledAt && x.scheduledAt <= iso())) {
+      send(a, 'Scheduler')
+      changed = true
+    }
+    for (const ep of state.episodes) {
+      for (const r of dueReminders(ep, now().getTime())) {
+        const people = state.participants.filter((p) => p.status !== 'disqualified')
+        const starting = r.offsetMin === 0
+        r.sentAt = iso()
+        r.delivery = deliver(people, r.channels, 'episode', starting, () => ({ kind: 'deadline', title: starting ? `${ep.title} is starting now` : `${ep.title} starts soon`, body: starting ? 'The lobby is open. Join now.' : `Live at ${new Date(ep.startsAt).toLocaleString('en', { weekday: 'long', hour: '2-digit', minute: '2-digit' })}.`, href: '/live' }), r.sentAt)
+        log({ actor: 'Scheduler', entity: 'episode', entityId: ep.id, action: 'publish', summary: `Sent the reminder "${r.offsetMin} min before" for ${short(ep.title)}` })
+        changed = true
+      }
+    }
+    if (changed) persist()
+  }
+
+  const liveCtx = (): LiveContext | null => {
+    const ep = state.live ? state.episodes.find((e) => e.id === state.live!.episodeId) : undefined
+    return ep ? { episode: ep, questions: state.questions, keys: state.answerKeys } : null
   }
 
   const adapter: MemoryAdapter = {
@@ -166,11 +249,167 @@ export function createMemoryAdapter(seed: ContestState, options: MemoryAdapterOp
       const i = state.questions.findIndex((q) => q.id === question.id)
       const before = i >= 0 ? clone(state.questions[i]) : undefined
       const saved = { ...clone(question), updatedAt: iso() } as Question
+      const who = actor ?? defaultActor
+      if (!before && !saved.review) saved.review = { stage: stageOf(saved), author: who, since: iso(), history: [{ at: iso(), actor: who, action: 'create', from: stageOf(saved), to: stageOf(saved) }] }
+      else if (saved.review && statusFor(saved.review.stage) !== saved.status) {
+        // the status was set by hand in the editor: the review follows it, and says so
+        const from = saved.review.stage
+        const to = stageOf({ ...saved, review: undefined })
+        saved.review = { ...saved.review, stage: to, since: iso(), preapprovedBy: undefined, note: undefined, history: [...saved.review.history, { at: iso(), actor: who, action: 'edit', from, to, note: 'Status set in the editor' }] }
+      }
       if (i >= 0) state.questions[i] = saved
       else state.questions.push(saved)
       log({ actor, entity: 'question', entityId: saved.id, action: before ? (saved.status === 'published' && before.status !== 'published' ? 'publish' : 'update') : 'create', summary: `${before ? 'Edited' : 'Created'} question "${short(saved.prompt)}"`, before, after: clone(saved) })
       persist()
       return wait(saved)
+    },
+    async reviewQuestions(ids, action: ReviewAction, options = {}, actor) {
+      const who = actor ?? defaultActor
+      const changed: Id[] = []
+      const skipped: { id: Id; reason: string }[] = []
+      for (const id of ids) {
+        try {
+          reviewOne(id, action, who, options.note)
+          changed.push(id)
+        } catch (e) {
+          skipped.push({ id, reason: e instanceof Error ? e.message : 'It could not be changed.' })
+        }
+      }
+      if (changed.length) persist()
+      return wait({ changed, skipped })
+    },
+
+    async getPacks() {
+      return wait({ topics: state.topics, packs: state.packs })
+    },
+    async publishPack(request, actor) {
+      const who = actor ?? defaultActor
+      const note = request.note.trim()
+      if (note.length < 5) throw new Error('Say what changed, in a few words.')
+      const topicIds = [...new Set(request.topics)]
+      const active = activePack(state.packs)
+      const error = packProblems(topicIds, state.questions, state.answerKeys, state.topics, state.program, active).find((p) => p.level === 'error')
+      if (error) throw new Error(error.text)
+      const revision = Math.max(0, ...state.packs.map((p) => p.revision)) + 1
+      const pack = buildPack(topicIds, state.questions, state.answerKeys, state.topics, { id: `pack-r${revision}`, revision, at: iso(), by: who, note })
+      for (const p of state.packs) if (!p.retiredAt) p.retiredAt = pack.createdAt
+      state.packs.push(pack)
+      log({ actor: who, entity: 'pack', entityId: pack.id, action: 'publish', summary: `Published pack revision ${revision} with ${pack.items.length} questions`, before: active ? clone(active) : undefined, after: clone(pack) })
+      persist()
+      return wait({ topics: state.topics, packs: state.packs })
+    },
+    async restorePack(packId, note, actor) {
+      const who = actor ?? defaultActor
+      const old = state.packs.find((p) => p.id === packId)
+      if (!old) throw new Error('That pack no longer exists.')
+      if (note.trim().length < 5) throw new Error('Say why, in a few words.')
+      const { items, dropped } = restoreItems(old, state.questions)
+      const live = items.filter((i) => state.topics.find((t) => t.id === i.topic && !t.archived))
+      const left = dropped + (items.length - live.length)
+      if (live.length === 0) throw new Error('Nothing in that pack can be served any more.')
+      const revision = Math.max(0, ...state.packs.map((p) => p.revision)) + 1
+      const topicIds = old.topics.filter((id) => state.topics.find((t) => t.id === id && !t.archived))
+      const pack = { id: `pack-r${revision}`, revision, createdAt: iso(), createdBy: who, note: `Restores revision ${old.revision}${left ? ` (${left} question${left === 1 ? '' : 's'} left out)` : ''}: ${note.trim()}`, topics: topicIds, items: live }
+      const active = activePack(state.packs)
+      for (const p of state.packs) if (!p.retiredAt) p.retiredAt = pack.createdAt
+      state.packs.push(pack)
+      log({ actor: who, entity: 'pack', entityId: pack.id, action: 'publish', summary: `Restored pack revision ${old.revision} as revision ${revision}`, before: active ? clone(active) : undefined, after: clone(pack) })
+      persist()
+      return wait({ topics: state.topics, packs: state.packs })
+    },
+    async saveTopic(topic, actor) {
+      const who = actor ?? defaultActor
+      const name = topic.name.trim()
+      if (!/^[a-z][a-z0-9-]{1,30}$/.test(topic.id)) throw new Error('The id is a tag: lower-case letters, digits and dashes, starting with a letter.')
+      if (name.length < 2) throw new Error('Give the topic a name.')
+      const i = state.topics.findIndex((t) => t.id === topic.id)
+      const before = i >= 0 ? clone(state.topics[i]) : undefined
+      const saved = { id: topic.id, name, archived: Boolean(topic.archived) }
+      if (i >= 0) state.topics[i] = saved
+      else state.topics.push(saved)
+      log({ actor: who, entity: 'topic', entityId: saved.id, action: before ? 'update' : 'create', summary: `${before ? (before.archived !== saved.archived ? (saved.archived ? 'Archived' : 'Restored') : 'Renamed') : 'Created'} topic ${saved.name}`, before, after: clone(saved) })
+      persist()
+      return wait({ topics: state.topics, packs: state.packs })
+    },
+
+    async getGate() {
+      promoteGate()
+      return wait({ current: state.gate, next: state.nextGate, usage: state.builds })
+    },
+    async saveGate(gate, options = {}, actor) {
+      const who = actor ?? defaultActor
+      promoteGate()
+      const t = now().getTime()
+      const before = clone(state.gate)
+      // the server owns the list of builds the store offers, the revision and the time
+      const stores = gate.stores.map((g) => ({ ...g, blockedBuilds: [...g.blockedBuilds].sort((a, b) => a - b), availableBuilds: before.stores.find((s) => s.store === g.store)?.availableBuilds ?? g.availableBuilds }))
+      const emergency = Boolean(gate.emergency)
+      const draft = { ...clone(gate), stores, emergency, effectiveAt: emergency ? undefined : gate.effectiveAt || undefined }
+      const error = gateProblems(draft, state.builds).find((p) => p.level === 'error')
+      if (error) throw new Error(error.text)
+      const shows = occurrences(state.program, t, 3).map((o) => ({ title: 'the live show', at: o.at, endsAt: o.endsAt }))
+      const review = reviewGate(before, draft, state.builds, t, shows)
+      if (!review.changed) throw new Error('Nothing changed.')
+      if (review.needsConfirm && !options.confirmed) throw new Error(review.reasons[0] ? `${review.reasons[0]} Confirm the change to save it.` : 'Confirm the change to save it.')
+      const saved = { ...draft, revision: Math.max(before.revision, state.nextGate?.revision ?? 0) + 1, savedAt: iso(), savedBy: who }
+      const later = !emergency && saved.effectiveAt && Date.parse(saved.effectiveAt) > t
+      if (later) state.nextGate = saved
+      else {
+        state.gate = saved
+        state.nextGate = undefined
+      }
+      if (emergency && state.live) {
+        // an emergency also takes people on stopped builds out of the show that is on air
+        const out = (id: Id) => {
+          const client = state.participants.find((p) => p.id === id)?.client
+          return client ? !canPlay(verdictFor(saved, client.store, client.build)) : false
+        }
+        state.live = { ...state.live, joined: state.live.joined.filter((id) => !out(id)), waiting: state.live.waiting.filter((id) => !out(id)) }
+      }
+      log({ actor: who, entity: 'gate', entityId: saved.id, action: 'update', summary: `${later ? 'Scheduled' : 'Saved'} version gate revision ${saved.revision}${emergency ? ' as an emergency' : ''}`, before, after: clone(saved) })
+      persist()
+      return wait({ current: state.gate, next: state.nextGate, usage: state.builds })
+    },
+
+    async getModeration() {
+      return wait({ reports: state.reports, violations: state.violations, claims: state.claims })
+    },
+    async claimCase(key, claim, actor) {
+      const who = actor ?? defaultActor
+      const held = state.claims[key]
+      if (claim) state.claims[key] = { by: who, at: iso() }
+      else if (held && held.by !== who) throw new Error(`Only ${held.by} can release this case. Take it over instead.`)
+      else delete state.claims[key]
+      persist()
+      return wait(state.claims)
+    },
+    async resolveCase(key, decision, actor) {
+      const who = actor ?? defaultActor
+      const c = groupReports(state.reports).find((x) => x.key === key)
+      if (!c) throw new Error('This case is already closed.')
+      const problem = decisionProblem(c, decision, { actor: who, claim: state.claims[key] })
+      if (problem) throw new Error(problem)
+      const person = c.kind === 'player' ? state.participants.find((p) => p.id === c.targetId) : undefined
+      const question = c.kind === 'question' ? state.questions.find((q) => q.id === c.targetId) : undefined
+      if (c.kind === 'player' && !person) throw new Error('That participant no longer exists.')
+      if (c.kind === 'question' && !question) throw new Error('That question no longer exists.')
+      if (decision.action === 'withdraw') {
+        const why = c.reasons.map((r) => REASONS[r].label.toLowerCase()).join(', ')
+        reviewOne(c.targetId, 'withdraw', who, `Reported (${why}): ${decision.note.trim()}`)
+      }
+      const { reports, violation } = applyDecision(c, decision, who, now().getTime(), nextId('v'))
+      for (const r of reports) state.reports[state.reports.findIndex((x) => x.id === r.id)] = r
+      if (violation) state.violations.push(violation)
+      if (person && decision.action === 'disqualify') {
+        const before = clone(person)
+        person.status = 'disqualified'
+        log({ actor: who, entity: 'participant', entityId: person.id, action: 'update', summary: `Disqualified ${person.name}`, before, after: clone(person) })
+      }
+      delete state.claims[key]
+      const target = person?.name ?? short(question?.prompt ?? c.targetId)
+      log({ actor: who, entity: 'report', entityId: key, action: 'update', summary: `${MODERATION_ACTIONS[decision.action].past}${decision.action === 'withdraw' ? '' : ` ${target}`} (${c.reports.length} report${c.reports.length === 1 ? '' : 's'})`, before: clone(c.reports), after: clone(reports) })
+      persist()
+      return wait({ resolved: reports.map((r) => r.id), violation })
     },
     async deleteQuestion(id, actor) {
       const question = state.questions.find((q) => q.id === id)
@@ -353,6 +592,126 @@ export function createMemoryAdapter(seed: ContestState, options: MemoryAdapterOp
       return wait(undefined)
     },
 
+    async getProgram() {
+      return wait(state.program)
+    },
+    async saveProgram(program, options = {}, actor) {
+      const bad = programChecks(program).find((c) => c.level === 'error')
+      if (bad) throw new Error(bad.text)
+      const impact = impactOf(state.program, program, state.registrations, now().getTime())
+      const verdict = worstSeverity(impact)
+      if (verdict === 'blocked') throw new Error(impact.find((i) => i.severity === 'blocked')!.message)
+      if (verdict === 'confirm' && !options.confirmed) throw new Error('People registered for these shows. Confirm the change to save it.')
+      const before = clone(state.program)
+      for (const item of impact) {
+        // a show that moved or went away takes its registrations with it: a real backend tells those people
+        if (item.change.kinds.some((k) => k === 'moved' || k === 'removed')) for (const key of Object.keys(state.registrations)) if (key.startsWith(`${item.change.slotId}@`)) delete state.registrations[key]
+      }
+      state.program = { ...clone(program), revision: before.revision + 1, savedAt: iso(), savedBy: actor ?? defaultActor }
+      const names = impact.map((i) => i.change.label)
+      log({ actor, entity: 'program', entityId: state.program.id, action: 'update', summary: impact.length ? `Saved program revision ${state.program.revision}: ${short(names.join(', '))}` : `Saved program revision ${state.program.revision}`, before, after: clone(state.program) })
+      persist()
+      return wait(state.program)
+    },
+    async listRegistrations() {
+      return wait(state.registrations)
+    },
+
+    async listEpisodes() {
+      sendDue()
+      return wait(state.episodes)
+    },
+    async saveEpisode(episode, actor) {
+      const i = state.episodes.findIndex((e) => e.id === episode.id)
+      const before = i >= 0 ? clone(state.episodes[i]) : undefined
+      if (i >= 0) state.episodes[i] = clone(episode)
+      else state.episodes.push(clone(episode))
+      log({ actor, entity: 'episode', entityId: episode.id, action: before ? 'update' : 'create', summary: `${before ? 'Edited' : 'Planned'} ${short(episode.title)}`, before, after: clone(episode) })
+      persist()
+      return wait(episode)
+    },
+
+    async getLive() {
+      const ctx = liveCtx()
+      if (state.live && ctx) state.live = tick(state.live, now().getTime(), ctx)
+      return wait(state.live)
+    },
+    async sendLive(command, actor) {
+      const at = now().getTime()
+      if (command.type === 'open-lobby') {
+        const ep = state.episodes.find((e) => e.id === command.episodeId)
+        if (!ep) throw new Error('That show no longer exists.')
+        state.live = openLobby(ep.id, at)
+        ep.status = 'live'
+        ep.packId = activePack(state.packs)?.id
+        log({ actor, entity: 'episode', entityId: ep.id, action: 'publish', summary: `Opened the lobby of ${short(ep.title)}` })
+        persist()
+        return wait(state.live)
+      }
+      if (command.type === 'close') {
+        state.live = null
+        persist()
+        return wait(null)
+      }
+      if (command.type === 'join') {
+        const person = state.participants.find((p) => p.id === command.participantId)
+        promoteGate()
+        if (person?.client) {
+          const verdict = verdictFor(state.gate, person.client.store, person.client.build)
+          if (!canPlay(verdict)) throw new Error(`${verdict === 'blocked' ? 'This version of the app is stopped.' : 'This version of the app is too old.'} ${state.gate.message} (${storeName(person.client.store)}, build ${person.client.build}.)`)
+        }
+        const suspension = activeSuspension(command.participantId, state.violations, at)
+        if (person?.status === 'disqualified') throw new Error('This account is disqualified and cannot join a show.')
+        if (suspension) throw new Error(`This account is suspended until ${new Date(suspension.endsAt!).toLocaleDateString('en', { month: 'short', day: 'numeric' })}.`)
+      }
+      const ctx = liveCtx()
+      if (!state.live || !ctx) throw new Error('There is no live show.')
+      const was = state.live.phase
+      const next = liveReduce(tick(state.live, at, ctx), { ...command, at }, ctx)
+      if (next.phase === 'finished' && was !== 'finished') {
+        ctx.episode.status = 'finished'
+        ctx.episode.result = episodeResultOf(next, ctx)
+        log({ actor, entity: 'episode', entityId: ctx.episode.id, action: 'update', summary: `Finished ${short(ctx.episode.title)} with ${next.joined.length} players` })
+      }
+      state.live = next
+      persist()
+      return wait(state.live)
+    },
+
+    async listSurveys() {
+      return wait(state.surveys)
+    },
+    async saveSurvey(survey, actor) {
+      const i = state.surveys.findIndex((x) => x.id === survey.id)
+      const before = i >= 0 ? clone(state.surveys[i]) : undefined
+      if (i >= 0) state.surveys[i] = clone(survey)
+      else state.surveys.push(clone(survey))
+      log({ actor, entity: 'survey', entityId: survey.id, action: before ? 'update' : 'create', summary: `${before ? 'Edited' : 'Created'} the survey "${short(survey.title)}"`, before, after: clone(survey) })
+      persist()
+      return wait(survey)
+    },
+    async listSurveyResponses(surveyId) {
+      return wait(surveyId ? state.surveyResponses.filter((r) => r.surveyId === surveyId) : state.surveyResponses)
+    },
+    async submitSurveyResponse(response) {
+      const survey = state.surveys.find((x) => x.id === response.surveyId)
+      const saved = { ...clone(response), id: nextId('sr'), at: iso(), ...(survey?.anonymous ? { participantId: undefined } : {}) }
+      state.surveyResponses.push(saved)
+      persist()
+      return wait(saved)
+    },
+
+    async getPrefs(participantId) {
+      return wait(prefsOf(participantId))
+    },
+    async savePrefs(prefs) {
+      const i = state.prefs.findIndex((p) => p.participantId === prefs.participantId)
+      if (i >= 0) state.prefs[i] = clone(prefs)
+      else state.prefs.push(clone(prefs))
+      persist()
+      return wait(prefs)
+    },
+
     async listAudit() {
       return wait(state.audit)
     },
@@ -387,7 +746,7 @@ export function createMemoryAdapter(seed: ContestState, options: MemoryAdapterOp
         state.contest = clone(before as Contest)
       } else throw new Error('This entry cannot be reverted.')
 
-      log({ actor, entity, entityId, action: 'revert', summary: `Reverted: ${entry.summary}` })
+      log({ actor, entity, entityId, action: 'revert', summary: `Reverted: ${entry.summary}`, of: auditId })
       persist()
       return wait(undefined)
     },

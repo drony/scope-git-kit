@@ -13,6 +13,9 @@ A **reusable React component kit** with a demo app and seed data around it. It f
 - **Components** for forms, navigation, overlays, calendars and date pickers, charts (plain SVG), a data table and an editable
   spreadsheet-style **data grid** (undo, autosave, totals, groups).
 - A **theme system**: one JSON file drives every color, radius, width and font, with a live editor, presets and contrast checks.
+- A **contest layer** on top of the kit: questions and answer keys, media, announcements, scoring, and a weekly live show with
+  a weekly program with quotas and final seats, difficulty levels, a live stage and host console, surveys and notification
+  preferences (demo: Contest Scope).
 - A **mega menu**, a demo app and **seed data** you can replace with your own API.
 - **Documentation** that is generated from the code, plus checks that keep it honest.
 
@@ -21,7 +24,7 @@ A **reusable React component kit** with a demo app and seed data around it. It f
 ```bash
 npm install
 npm run dev          # Finscope, http://localhost:5173
-npm run dev:contest  # Contest Scope, http://localhost:5173
+npm run dev:contest  # Contest Scope, http://localhost:5174 (run both to jump between them)
 npm run check        # types, layer rules, docs up to date
 npm run build        # runs the checks, then builds Finscope into dist/ and Contest Scope into dist/contest/
 ```

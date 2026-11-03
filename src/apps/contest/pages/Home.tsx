@@ -14,6 +14,26 @@ const FAMILIES = [
   { title: 'People & scoring', body: 'Invite participants, review answers next to the key, score by rubric, and watch a live leaderboard and a heat grid.', to: '/admin/results' },
 ]
 
+/** A way into the other demo built on the same kit. */
+function OtherDemo() {
+  const other = import.meta.env.APP_LINKS.find((a) => a.id !== 'contest')
+  if (!other) return null
+  return (
+    <Section>
+      <Card className="row spread wrap">
+        <div className="stack">
+          <span className="eyebrow">Same kit, another product</span>
+          <strong>Looking at something different?</strong>
+          <p>{other.title} is a finance app built from the same components: dashboards, editable tables, charts and a calendar.</p>
+        </div>
+        <a className="btn has-arrow" href={other.href}>
+          Open {other.title}
+        </a>
+      </Card>
+    </Section>
+  )
+}
+
 export default function Home() {
   usePageTitle('Home')
   const site = useSite()
@@ -46,6 +66,7 @@ export default function Home() {
           </>
         }
       />
+      <OtherDemo />
       <Section id="features">
         <div className="container">
           <SectionHead eyebrow="What is inside" title="Components for the whole contest" lead="Each one takes plain props, is built on the kit, and has a live example on the components page." />
@@ -64,7 +85,7 @@ export default function Home() {
       </Section>
       <Section>
         <div className="container">
-          <SectionHead eyebrow="Theme sample" title="This is the Contest Scope theme" lead="Indigo, amber and a little more room. Everything here reads from the same tokens as the Finscope theme; only the palette and style differ." />
+          <SectionHead eyebrow="Same look" title="The Finscope design language" lead="Contest Scope uses the Finscope theme: black primary, quiet grays and soft corners. Only the contest components are new." />
           <div className="cs-grid">
             <Card>
               <Kpi label="Participants" value="12" sub="10 have started" />

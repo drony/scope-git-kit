@@ -4,7 +4,7 @@
 
 Pure functions: scoring, question types, upload rules and crop maths.
 
-[scoreAnswer](#scoreanswer) · [questionTypes](#questiontypes) · [audienceOf](#audienceof) · [renderTemplate](#rendertemplate) · [announcementProblems](#announcementproblems) · [rankParticipants](#rankparticipants) · [parseInvites](#parseinvites) · [dayLabel](#daylabel) · [validateMediaFile](#validatemediafile) · [mediaUsage](#mediausage) · [visibleWindow](#visiblewindow)
+[scoreAnswer](#scoreanswer) · [questionTypes](#questiontypes) · [audienceOf](#audienceof) · [renderTemplate](#rendertemplate) · [announcementProblems](#announcementproblems) · [rankParticipants](#rankparticipants) · [parseInvites](#parseinvites) · [diffEntry](#diffentry) · [diffPack](#diffpack) · [verdictOf](#verdictof) · [groupReports](#groupreports) · [reviewActions](#reviewactions) · [occurrences](#occurrences) · [zonedInstant](#zonedinstant) · [dayLabel](#daylabel) · [validateMediaFile](#validatemediafile) · [mediaUsage](#mediausage) · [visibleWindow](#visiblewindow)
 
 ### scoreAnswer
 
@@ -119,6 +119,139 @@ Bo Tanaka <bo@example.com>, Orbit', existingEmails)
 ```
 
 - A line has a problem when it has no e-mail address, a bad one, one that is already in the contest, or one that appeared on an earlier line.
+
+### diffEntry
+
+The audit trail as plain functions: what an entry changed field by field, whether it is sensitive, whether it can be reverted and what a revert would also undo, how to filter, group and count the trail by day, and how to export it.
+
+```ts
+import { diffEntry, revertRule, sensitivity, filterAudit, auditToCsv } from '@/contest/lib/audit'
+```
+
+```tsx
+diffEntry(entry)
+// [{ label: 'Points', kind: 'changed', from: '15', to: '20' }, { label: 'Options', kind: 'changed', detail: ['Added: Mars'] }]
+revertRule(entry) // { can: false, why: 'Changes to people and scores are kept for the record and cannot be reverted yet.' }
+filterAudit(entries, { ...EMPTY_FILTER, actor: 'Ada', sensitiveOnly: true }, Date.now())
+auditToCsv(entries) // 'Time,Who,Kind,Id,Action,What,Sensitive
+…'
+```
+
+- Sensitive entries: a deletion, a revert, any change to the version gate (an emergency says so), a new pack, a decision that suspends or disqualifies, and a person disqualified.
+- `revertRule` follows the in-memory adapter: questions, answer keys, media and the contest can be reverted; the rest is kept for the record. A revert cannot be reverted.
+- An export cannot run anything when it is opened in a spreadsheet: a cell that starts with `=`, `+`, `-` or `@` gets an apostrophe in front.
+
+### diffPack
+
+Content packs as plain functions: which approved questions can go into a pack, what a pack would hold, how the bank has moved since a pack was made, how many weeks of the daily shows each topic can feed, and what is wrong with a pack before it is published.
+
+```ts
+import { diffPack, coverage, packProblems, buildPack } from '@/contest/lib/packs'
+```
+
+```tsx
+isPackable(question, topics, key) // approved, has a topic that is not archived, nothing left to fix
+const diff = diffPack(activePack(packs)!, bank, keys, topics)
+// { added: [q40], changed: [q3, q9], withdrawn: [{ item, question: q43 }], archived: [q28], unchanged: 17 }
+coverage(topics, bank, keys, pack, program)[0] // { topic, available: 6, served: 5, levels: […], showsPerWeek: 1, weeks: 0, state: 'thin' }
+```
+
+- A pack pins every question to the `updatedAt` it had. A later edit does not change what the pack serves; it shows as "edited since" until a new pack is published.
+- A question that was returned to review or deleted but is still in the pack in force is the worst kind of drift: players can still get it.
+- Runway is the number of questions the pack serves for a topic divided by six per show and the daily shows of that topic each week. Less than four weeks is thin.
+
+### verdictOf
+
+The version gate as plain functions: what a build is told, how many players that touches, what is wrong with a gate, what a change would do before it is saved, and which gate is in force at a given time.
+
+```ts
+import { verdictOf, usageImpact, gateProblems, reviewGate } from '@/contest/lib/gate'
+```
+
+```tsx
+verdictOf({ minBuild: 380, recommendedBuild: 388, blockedBuilds: [383] }, 383) // 'blocked'
+verdictOf(rule, 379) // 'required'
+verdictOf(rule, 385) // 'recommended'
+usageImpact(rule, usage) // { total: 4800, ok: 2568, recommended: 2121, required: 49, blocked: 64 }
+reviewGate(current, draft, usage, Date.now(), shows) // { stores: [{ newlyStopped: 1112, … }], needsConfirm: true, reasons: ['App Store: 1,112 more players (23.2%) could not play.'], timing: [] }
+```
+
+- A blocked build is stopped even above the minimum. Below the minimum it must update. Below the suggested build it plays, with a prompt it can close.
+- A gate is refused when the suggested build is below the minimum, when the minimum or the suggested build is above the newest build in the store (everybody would be locked out), when every build in the store is blocked, when the link is not https, or when the message is empty.
+- A change needs a confirmation when it is an emergency or when a store would stop a tenth of its players or more. A start time from half an hour before a show until it ends is flagged.
+
+### groupReports
+
+Reports and moderation as plain functions: which open reports are one case, how urgent a case is and why, what the data says about a player or a question, how reliable a reporter has been, the next step on the ladder, and what a decision does.
+
+```ts
+import { groupReports, priorityOf, playerSignals, suggestAction, decisionProblem } from '@/contest/lib/moderation'
+```
+
+```tsx
+const cases = groupReports(reports) // open reports about one target are one case
+const signals = playerSignals('p7', submissions, participants)
+// [{ label: 'Very fast answers', detail: '10 of 10 answers took 3 seconds or less. Other players took 28 seconds at the median.', strength: 3 }]
+priorityOf(cases[0], { reports, violations, signals, now })
+// { level: 'urgent', score: 9, factors: [{ label: 'Cheating is serious', points: 3 }, …], overdue: true }
+suggestAction(cases[0], { violations, signals }) // { action: 'suspend', days: 3, why: 'Strong evidence: a short suspension.' }
+```
+
+- Priority adds up: how serious the reason is (1 to 3), one point per extra person who reported (up to 3), the strength of the signs (up to 4), earlier violations (up to 2), waiting time (1 after 2 days, 2 after 7) and minus one when every reporter was often wrong. Every point has a sentence.
+- The ladder is warning, 3 days, 7 days, disqualification. Strong data moves one step up. A cheating signal needs wrong answers that few others gave: a popular wrong answer is not a fingerprint.
+- A case is overdue after 1 day (urgent), 2 (high), 5 (medium) or 10 days (low).
+
+### reviewActions
+
+The review of questions as plain functions: the stage a question is in, what a given person can do to it (and why not), the question after an action, a dry run of an action on many questions, and the counts of the views.
+
+```ts
+import { reviewActions, applyReview, bulkPlan, reviewCounts } from '@/contest/lib/review'
+```
+
+```tsx
+reviewActions(question, key, { actor: 'Ada' })
+// [{ action: 'preapprove', enabled: false, why: 'You wrote this question. Someone else has to pre-approve it.', primary: true }, …]
+const next = applyReview(question, 'return', { actor: 'Cleo' }, Date.now(), key, 'Add a second source.')
+const { ok, skipped } = bulkPlan(selected, 'approve', keys, { actor: 'Ada' })
+```
+
+- The stages are draft, pending, pre-approved, approved, returned and trashed. Only an approved question is published (`statusFor`); without a review record the stage follows the status.
+- Four eyes: nobody pre-approves or approves a question they wrote, and the final approval comes from someone other than the first reviewer. With `policy.twoStep` off, one reviewer approves.
+- A return or a withdrawal needs a reason of at least five characters. An approved question cannot be trashed: withdraw it first. The in-memory adapter also refuses to withdraw or trash a question that is in a show that has not finished.
+
+### occurrences
+
+The weekly program as plain functions: every show of the coming days as a dated occurrence, its state (upcoming, soon, live, done), what a change does to the people who registered, and what is wrong with the program.
+
+```ts
+import { occurrences, showState, impactOf, programChecks } from '@/contest/lib/program'
+```
+
+```tsx
+occurrences(program, Date.now(), 7) // [{ key: 'd2@2026-11-03', date: '2026-11-03', at: 1793725200000, … }]
+impactOf(saved, draft, registrations, Date.now())
+// [{ severity: 'confirm', message: '864 people registered for the next Tue 20:00 show … It would be moved.', registered: 1301 }]
+programChecks(draft) // [{ level: 'error', slotId: 'f', text: 'The daily shows give 800 seats, but the final has room for 500.' }]
+```
+
+- A show that has started is `blocked`; a show people registered for needs a confirmation (`confirm`); the rest is `free`. Only the shows of the next 14 days count.
+- Times are read on the wall clock of the program's time zone, so a daily show at 20:00 stays at 20:00 across summer time.
+
+### zonedInstant
+
+Wall-clock time in a named time zone, with no library: the instant at which a zone's clock reads a date and time, what a clock reads at an instant, and small calendar steps.
+
+```ts
+import { zonedInstant, instantOn, clockIn } from '@/contest/lib/zoned'
+```
+
+```tsx
+instantOn('2026-11-03', '20:00', 'Europe/Istanbul') // 1793725200000 (17:00 UTC)
+clockIn(1793725200000, 'Europe/Istanbul') // '20:00'
+```
+
+- Uses `Intl.DateTimeFormat`, so the zones and their summer-time rules come from the browser or Node. A time that does not exist (the hour skipped when the clocks go forward) resolves to the same clock time one hour earlier, so a show never disappears.
 
 ### dayLabel
 

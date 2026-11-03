@@ -129,7 +129,7 @@
   justify-items: center;
   padding: 1.5rem 1rem 1.75rem;
   border-radius: var(--radius);
-  background: linear-gradient(160deg, #1e1b4b, #4338ca 60%, #7c3aed);
+  background: linear-gradient(160deg, #0f0f11, #26262b);
   color: #fff;
 }
 .cs-pv-time {

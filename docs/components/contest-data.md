@@ -4,7 +4,7 @@
 
 The backend interface, the in-memory backend, and the hooks that load and save contest data.
 
-[ContestProvider](#contestprovider) · [ContestAdapter](#contestadapter) · [createMemoryAdapter](#creatememoryadapter) · [useResource](#useresource) · [useQuestions](#usequestions) · [useAnswerKeys](#useanswerkeys) · [useMedia](#usemedia) · [useRankReplay](#userankreplay) · [useMySubmission](#usemysubmission) · [useContest](#usecontest)
+[ContestProvider](#contestprovider) · [ContestAdapter](#contestadapter) · [createMemoryAdapter](#creatememoryadapter) · [useResource](#useresource) · [usePacks](#usepacks) · [useGate](#usegate) · [useModeration](#usemoderation) · [useQuestions](#usequestions) · [useAnswerKeys](#useanswerkeys) · [useMedia](#usemedia) · [useProgram](#useprogram) · [useRegistrations](#useregistrations) · [useEpisodes](#useepisodes) · [useLive](#uselive) · [useLiveShow](#useliveshow) · [useLiveSimulation](#uselivesimulation) · [useSurveys](#usesurveys) · [useRankReplay](#userankreplay) · [useMySubmission](#usemysubmission) · [useContest](#usecontest)
 
 ### ContestProvider
 
@@ -97,18 +97,77 @@ await mutate(() => api.deleteQuestion(id)) // runs the change, then reloads
 
 - `reload` keeps the old data on screen while it loads. `mutate` rejects with the original error so the caller can show it next to its form.
 
+### usePacks
+
+The topics and every pack, with `publish`, `restore` and `saveTopic`. Each write loads the snapshot again and rejects with a sentence when it is not allowed.
+
+```ts
+import { usePacks } from '@/contest/hooks/useContestData'
+```
+
+```tsx
+const { data, publish, restore, saveTopic } = usePacks()
+await publish({ topics: ['science', 'geography'], note: 'The new geography questions.' }, 'Ada')
+await restore('pack-r3', 'The new pack had a problem.', 'Ada')
+```
+
+- The server builds the pack from the approved questions: `publish` only chooses topics. It refuses an archived topic, a topic with no approved question, a note that is too short and a pack equal to the one in force.
+
+### useGate
+
+The version gate in force, the one that starts later (if any), and how many players use each build, with `save`. Saving sends a new revision; the server keeps the list of builds the store offers.
+
+```ts
+import { useGate } from '@/contest/hooks/useContestData'
+```
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `pollMs` | `number` | `0` | Ask again every this many milliseconds. 0 means once. |
+
+```tsx
+const { data, save } = useGate(4000)
+const rule = gateInForce(data.current, data.next, Date.now())
+await save({ ...draft, message: 'Please update.' }, { confirmed: true }, 'Ada')
+```
+
+- `save` rejects with a sentence when the gate is not allowed: a minimum above the newest build, a link that is not https, a change that needs a confirmation.
+
+### useModeration
+
+The reports, the violations and who is working on which case, with `claim`, `release` and `resolve`. Every write loads the snapshot again.
+
+```ts
+import { useModeration } from '@/contest/hooks/useContestData'
+```
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `pollMs` | `number` | `0` | Ask again every this many milliseconds. 0 means once. |
+
+```tsx
+const { data, claim, release, resolve } = useModeration()
+await claim('player:p7', 'Ada')
+const { resolved, violation } = await resolve('player:p7', { action: 'suspend', days: 3, note: 'Answers within a second.' }, 'Ada')
+```
+
+- `resolve` rejects with a sentence when the decision is not allowed: someone else holds the case, the reason is too short, the question is in a show that has not finished. Show it in a toast.
+
 ### useQuestions
 
-The questions, with `save` and `remove`. Needs a ContestProvider.
+The questions, with `save`, `remove` and `review`. Needs a ContestProvider.
 
 ```ts
 import { useQuestions } from '@/contest/hooks/useContestData'
 ```
 
 ```tsx
-const { data: questions = [], save, remove } = useQuestions()
+const { data: questions = [], save, remove, review } = useQuestions()
 await save({ ...question, points: 20 }, 'Ada')
+const { changed, skipped } = await review(['q34', 'q35'], 'preapprove', undefined, 'Ada')
 ```
+
+- `review` does a review action (see `reviewActions`) to many questions. It resolves with what changed and what was left out, each with a reason; only a failure of the call itself rejects.
 
 ### useAnswerKeys
 
@@ -138,6 +197,129 @@ import { useMedia } from '@/contest/hooks/useContestData'
 ```tsx
 const { data: assets = [], upload, update, remove } = useMedia()
 <MediaUploader onUpload={(file, o) => upload(file, o)} />
+```
+
+### useProgram
+
+The weekly program, with `save`. Saving sends a new revision; the server decides the revision number and refuses a change to a show that is on air, or a change to a show people registered for unless `confirmed` is true.
+
+```ts
+import { useProgram } from '@/contest/hooks/useContestData'
+```
+
+```tsx
+const { data: program, save } = useProgram()
+await save(draft, { confirmed: true })
+```
+
+- `save` rejects with a sentence a person can read: show it in a toast. See `impactOf` and `programChecks` for the same rules without a server.
+
+### useRegistrations
+
+How many people registered for each show, by occurrence key (`slotId@YYYY-MM-DD`).
+
+```ts
+import { useRegistrations } from '@/contest/hooks/useContestData'
+```
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `pollMs` | `number` | `0` | Ask again every this many milliseconds. 0 means once. |
+
+```tsx
+const { data: registrations = {} } = useRegistrations(5000)
+registrations[occurrenceKey(slot.id, '2026-11-03')] // 864
+```
+
+### useEpisodes
+
+The weekly shows, with `save`. Reading them is also what sends reminders that are due.
+
+```ts
+import { useEpisodes } from '@/contest/hooks/useContestData'
+```
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `pollMs` | `number` | `0` | Ask again every this many milliseconds. 0 means once. |
+
+```tsx
+const { data: episodes = [], save } = useEpisodes(5000)
+```
+
+### useLive
+
+The live show now, or null. It asks again every few hundred milliseconds and the adapter works the state up to the server clock each time. `send` sends a command.
+
+```ts
+import { useLive } from '@/contest/hooks/useContestData'
+```
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `pollMs` | `number` | `400` | Ask again every this many milliseconds. |
+
+```tsx
+const { data: live, send } = useLive()
+await send({ type: 'start' })
+```
+
+### useLiveShow
+
+Everything a screen needs to show the live show: its state, the context the state machine needs, a `send` for commands, and the server clock.
+
+```ts
+import { useLiveShow } from '@/contest/hooks/useLiveShow'
+```
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `pollMs` | `number` | `400` | Ask again every this many milliseconds. |
+
+```tsx
+const { live, ctx, send, now } = useLiveShow()
+if (live && ctx) return <LiveStage state={live} ctx={ctx} now={now} … />
+```
+
+### useLiveSimulation
+
+Pretend players for a demo: bots join the lobby one by one and answer each question after a think time that depends on the bot and the question. A fixed seed gives the same crowd every time.
+
+```ts
+import { useLiveSimulation } from '@/contest/hooks/useLiveSimulation'
+```
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `live` *(required)* | `LiveState \| null` |  | The live show now. |
+| `ctx` *(required)* | `LiveContext \| null` |  | The show, the questions and the keys. |
+| `enabled` *(required)* | `boolean` |  | Switches the bots on. |
+| `count` | `number` | `24` | How many bots. |
+| `seed` | `number` | `11` | Makes the crowd repeatable. |
+
+```tsx
+useLiveSimulation(live, ctx, simulate)
+```
+
+- Bots talk to the adapter directly. A real show has no use for this: real players answer from their own screens.
+
+### useSurveys
+
+The surveys, with `save`. useSurveyResponses gives the answers (all, or one survey's) with `submit`. usePrefs gives one person's notification preferences with `save`.
+
+```ts
+import { useSurveys, useSurveyResponses, usePrefs } from '@/contest/hooks/useContestData'
+```
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `surveyId` | `string` |  | For `useSurveyResponses`: only this survey. |
+| `participantId` | `string` |  | For `usePrefs`: whose preferences. |
+
+```tsx
+const { data: surveys = [] } = useSurveys()
+const { submit } = useSurveyResponses(survey.id)
+const { data: prefs, save } = usePrefs(me.id)
 ```
 
 ### useRankReplay
@@ -197,5 +379,5 @@ const { data: audit = [], revert } = useAudit()
 const { data: notes = [], markRead } = useNotifications(me.id)
 ```
 
-- `useAudit().revert(id)` puts an entity back the way it was before that entry.
+- `useAudit().revert(id, actor)` puts an entity back the way it was before that entry. The revert is a new entry with `of` set to the entry it reverted.
 - `useParticipants()` also gives `invite(people)`; `useSubmissions()` gives `saveScore`; `useAnnouncements()` gives `save` and `send`.

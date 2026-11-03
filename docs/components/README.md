@@ -152,12 +152,25 @@ Write a question, set its answer key, preview it as a participant, and run the q
 
 - **QuestionView**: One question as the participant sees it: type, points and timer, prompt, pictures, hint, the answer input, then the result banner.
 - **AnswerInput**: The right answer input for any question type. ChoiceAnswer, TextAnswer, NumericAnswer, OrderingAnswer, MatchingAnswer and UploadAnswer are the six inputs it picks from.
+- **QuestionQuickEditor**: Write a question and its answer in one place. Type the question, type the options, tick the right one next to it: the answer key is made as you go. Level, time and points start from sensible defaults.
+- **QuestionImport**: Write or paste many questions at once. Blocks are split by a blank line: the first line is the question, the lines below are options, a * marks the right one. The list is read as you type.
 - **QuestionComposer**: The form for one question: type, prompt, media, options, points, time limit, tags, hint and explanation. It saves nothing; it hands every change to `onChange`.
 - **AnswerOptionsEditor**: Add, remove, reorder and rename the options of a question. Each option can have a picture and a note shown after answering.
 - **AnswerKeyEditor**: The back-office editor for the answer key: right options, accepted wordings, number and tolerance, right order, matching pairs, or a rubric. It warns when the key no longer fits and has a "Try an answer" box.
 - **QuestionPreview**: The question exactly as a participant sees it, on a phone, tablet or desktop frame, with a state scrubber: open, answered, right, wrong, time up, locked.
 - **QuestionBank**: All questions in a searchable, sortable, filterable table: type, points, time, status, whether the answer key is complete, and tags.
 - **QuizRunner**: The participant's whole quiz: one question at a time, a question map, per-question timers, a save indicator, an overview before submitting, and the result afterwards.
+
+## [Question review](./contest-review.md)
+
+Getting a question from a draft to the bank: views with counts, a queue, bulk actions with a dry run, one question at a time with its history, and a reason for every return.
+
+- **ReviewRail**: The views of the review as a list with counts: what waits for you, every question, one view per stage (drafts, waiting, pre-approved, approved, returned, trash) and the questions that have waited too long.
+- **ReviewQueue**: The questions of one view as a list to work through: a tick box, the question, its level, topic, writer, source trust, how many things to check and how long it has waited (amber when too long). Select-all sits in the header.
+- **ReviewBar**: The bar for acting on many questions at once. Each button says how many of the ticked questions it will change, and the line under it says why the others are left out, so nothing is skipped in silence. A button appears only for actions that apply to at least one ticked question.
+- **ReviewPanel**: One question for a reviewer: where it is in the review and for how long, the question with the right answer marked, the things to check, the reason it was returned, the buttons for what this person can do (with the reason shown when they cannot), and the history.
+- **ReviewHistory**: What happened to a question, newest first: who did what, when, and the reason when they gave one.
+- **ReviewReasonDialog**: Asks why, before a question is returned or withdrawn. The reason goes to the writer, so the button stays off until it is at least a few words. Quick reasons add a common sentence with one tap.
 
 ## [Media](./contest-media.md)
 
@@ -179,6 +192,9 @@ Write an announcement for the right people and channels, preview it, and show it
 - **ChannelPreview**: The same announcement as each channel shows it: a notification in the app, an e-mail, and a push on a lock screen.
 - **DeliveryStatus**: After an announcement is sent: per channel, how many people it reached, how many it missed, and why.
 - **AnnouncementFeed**: What a participant reads: the announcements that were sent, pinned ones first, then the newest.
+- **ReminderPlanner**: The reminders before a show on a time line: a day before, an hour before, ten minutes before, and "starting now". Each has its channels and a clock time worked out from the start. After sending, a delivery report.
+- **NotificationPreferences**: A person's say over what reaches them: a grid of kinds of message by channel, quiet hours in their own time zone for push and e-mail, and an optional daily summary. The in-app bell is never held back.
+- **PushPrimer**: A soft question before the system's own permission box. It says what the person gets and asks first. The browser prompt appears only after "Turn on".
 - **NotificationCenter**: A bell with the number of unread notifications. It opens a panel with the notifications grouped by day. NotificationItem is one row of it, also used in previews.
 
 ## [Participants & scoring](./contest-people.md)
@@ -194,6 +210,95 @@ Invite and manage people, review their answers, score by rubric, and show the ra
 - **Podium**: The first three of a ranking on a podium: first in the middle and tallest, second on the left, third on the right.
 - **ScoreHeatGrid**: Who got what: a person on every row, a question in every column, each cell coloured by the share of the points it earned. The hardest question is tagged.
 
+## [Content packs](./contest-packs.md)
+
+The snapshot of approved questions the shows are served from: what is in force, coverage by topic, what changed in the bank since, the next pack, and the history.
+
+- **PackStatus**: The pack that is being served: its revision, who made it and when, how many questions and topics it holds, and how far the bank has moved since. A question that was returned to review but is still served is called out first: players can still get it until a new pack is published.
+- **PackCoverage**: Per topic: how many questions the pack serves against how many the bank could give, how they spread over the five levels, how many daily shows of the program use the topic, and how many weeks of those shows the served questions last. "Thin" means less than four weeks.
+- **PackDiffList**: What changed in the bank since a pack was made, in four groups: questions that were returned or deleted but are still served, questions in a topic that was archived, questions that were edited, and questions that were approved since.
+- **PackBuilder**: Making the next pack: tick the topics, read what is wrong, say what changed, publish. The server builds the pack from the approved questions, so the screen only chooses topics. An archived topic cannot be chosen; a topic with nothing approved is an error, a thin one a warning.
+- **PackHistory**: Every pack, newest first: its revision, whether it is in force, who made it, what changed, how many questions, and how that differs from the pack before it. A pack that is not in force can be restored.
+- **TopicManager**: The topics as a list: the id (a tag, fixed once it exists), the name people see, and whether the topic is archived. An archived topic is hidden and no new pack serves it. A form adds a topic. Renaming changes the name only: questions are tied to the id.
+
+## [Reports & moderation](./contest-moderation.md)
+
+Reports about players and questions as cases: a queue by urgency, the evidence and why a case is urgent, a decision with its consequences, and the record of each player.
+
+- **CaseQueue**: The open cases, most urgent first. A row has the priority in words, the person or question, the reasons given, how many people reported, how long it has waited, whether it is overdue (and by what rule), and who is working on it.
+- **CasePanel**: One case for a moderator, top to bottom: who or what was reported and who is working on it, the reports with how reliable each reporter has been, why the case has its priority and what the data shows, the record of the player, and the decision. The decision is off while someone else holds the case; "Take over" moves it.
+- **RiskSignals**: Why a case has the priority it has. No hidden score: every point has a sentence ("Cheating is serious +3", "3 different people reported it +2"), and under them what the data shows with how strong each sign is. An overdue case says by how long it should have been done.
+- **DecisionForm**: The decision on a case: pick an action (the suggested one is chosen and the form says why), see in plain words what it does, give a reason, confirm. A suspension asks for days. The button stays off, and a line says why, until the decision is complete.
+- **ViolationHistory**: A player's record on the ladder: four steps (warning, short suspension, long suspension, disqualification), filled as far as the number of violations, and the entries under it, newest first, each with who decided and why. A suspension that is still running says until when.
+- **ReportLog**: What was decided, newest first. Reports closed by one decision are one row, with who reported, the reasons and the note of the moderator.
+
+## [Version gate](./contest-versions.md)
+
+Which builds of the app may play: players by build, the rule per store, what a player sees, the review before a save, and the simulator.
+
+- **BuildLadder**: The players of one store, build by build: a column for every build, as tall as the number of players on it and coloured by what the gate tells that build. The minimum and the suggested build are marked above their columns. Under the chart: how many players each verdict touches.
+- **StoreGateEditor**: The rule for one store as a short form: the oldest build that may play, the build from which people are current, builds that are switched off, and where "Update" goes. The builds the store offers are listed, with a button to suggest the newest one. Problems show under the fields in words.
+- **GateImpact**: The review before a save, in numbers of people: for every store that changed, how many players cannot play before and after, and who is newly stopped. It says why a confirmation is needed (an emergency, or a tenth of a store's players or more), warns when the start time falls in a show, and lists errors that stop the save. Nothing shows while nothing has changed.
+- **GateSimulator**: "What would this player see?" Pick a store and a build and the screen appears as the player gets it, with the words of the verdict above it. It reads the gate you give it, so it can try a draft before anything is saved.
+- **UpdateScreen**: What a player sees. A required update is a full card with one way out, the update. A stopped build says so. A suggestion is a card that can be closed. A current build sees nothing. The text comes from the gate.
+
+## [Weekly show](./contest-weekly.md)
+
+Level, time and source of a question; choosing questions; building the line-up with its difficulty curve; the rundown; and checking levels against real answers.
+
+- **DifficultyMeter**: The difficulty of a question as a ladder of five growing bars: Warm-up, Easy, Medium, Hard, Finale. Read-only it is a small badge; with `onChange` it is a picker of real radio buttons.
+- **TimeDial**: How long people get to answer: a row of usual times, a box for any other, and a suggestion that fits the type and level of the question. The seconds to read the question are shown on top.
+- **SourceField**: Where the answer to a question was checked: kind, title, address, and whether an editor verified it. Warns when the source is only Wikipedia. SourceBadge is the small pill that shows how far a source can be trusted.
+- **SourceBadge**: A small pill that says how far a question's source can be trusted: Verified, Original, Not checked, Wikipedia only, or No source.
+- **QuestionPicker**: The question bank as cards for choosing what goes on air. Each card shows level, time, source trust, how people really answered it and when it was last used. Filter by topic, level, "not used lately" and "source checked".
+- **EpisodeBuilder**: Builds the line-up of a weekly show. Three views at once: the running order (drag to reorder, set each time), the difficulty curve against the usual build-up, and the time bar against the broadcast slot. Checks say what is wrong before it goes on air.
+- **EpisodeCard**: One show of the weekly calendar: number and day, a strip of difficulty bars (the shape of the show at a glance), and either the time to go or how it went.
+- **RunOfShow**: The rundown sheet of a show: every item with the clock time it starts, how long it runs, and a bar for its length. The lobby opens before the start; the last row says when the show goes off air.
+- **DifficultyCalibration**: The level a writer gave against how people really answered. A chart (a dot above the band is easier than written, below is harder) and a list of the questions that do not fit, with a "Move to …" action and a flag for questions that do not separate strong players from weak ones.
+
+## [Weekly program](./contest-program.md)
+
+The recurring plan of the contest: the week board, a show editor, the seats that lead to the final, checks, and the review before a save.
+
+- **QuotaMeter**: How full a show is: a bar and the numbers. Plain below 80%, "Filling" and amber from 80%, "Full" and red at 100%.
+- **ProgramBoard**: The week at a glance: seven day columns, Monday first, each with its shows. A show card has the start time, the topic, the final seats it gives (or "Final") and how full it is. Today is marked, shows on air or about to start say so, and the final is drawn apart from the daily shows.
+- **SlotEditor**: One show of the program as a short form: daily or final, the day, the start time and length, the topic, the quota (with presets) and, for a daily show, how many of its best players win a seat in the final.
+- **QualificationFlow**: How the week leads to the final: one bar with a segment for every daily show, as wide as the seats it gives, against the room the final has. Seats that are left stay open; seats above the room are marked as too many.
+- **ProgramChecks**: What is wrong with the program, errors first: overlapping shows, too many seats for the final, a missing topic or quota, a final in the middle of the week, a topic three days in a row, a start in the night.
+- **ProgramImpact**: The review before a save: every changed show with what the change does to the people who registered. A show on air is locked, a show with registrations needs a tick in the confirm box, anything else is safe. Errors in the program stop the save too. Nothing shows while the two programs are the same.
+- **UpcomingShows**: The next shows in time order. The first one has a live countdown; each row has the day, the start time, the topic, how full it is and, when `lineup` says so, whether its questions are ready.
+
+## [Live show](./contest-live.md)
+
+The waiting room, the player stage, the host console, the answer bars, the scoreboard and the recap.
+
+- **LiveLobby**: The waiting room before a show: its name, the time to go, who is here, and what to expect. It uses the dark studio look in both themes.
+- **LiveStage**: What a player sees while the show runs: a countdown ring, the question, big answer tiles (colour, shape and letter), a "locked in" state, then the reveal with the points won, the streak and the scoreboard.
+- **HostConsole**: The host's control desk. One big button always does the next sensible thing (start, lock, reveal, next), a ring shows the time, a meter shows how many players answered, and bars show how the room splits. Space does the main thing, R reveals at once, P pauses.
+- **AnswerDistribution**: How the room answered: a bar per option with its shape and letter, the count and the share. The right options are marked after the reveal. TILE_SHAPES are the shapes that go with the tile colours.
+- **LiveScoreboard**: The scoreboard of a live show: place, name, points, the points just won, and a flame for a streak. Rows slide when the order changes.
+- **EpisodeRecap**: How a finished show went: the podium, how many played, the average time to answer, and the easiest and hardest question.
+
+## [Surveys & polls](./contest-surveys.md)
+
+Scales, one-tap polls, a survey runner and builder, and the results.
+
+- **NpsScale**: The standard 0 to 10 scale in three coloured bands: critics (0–6), passives (7–8) and promoters (9–10). RatingScale (five stars), LikertScale (5 or 7 points) and SurveyQuestionInput (the right input for any survey question) live in the same file.
+- **PollCard**: A one-tap poll for a break: tap an option and the bars open with how everyone voted. Results stay hidden until the person votes.
+- **SurveyRunner**: A survey one question at a time, with a progress bar and a Skip on every optional question. After the last question, a thank-you screen.
+- **SurveyBuilder**: Builds a short survey from templates or from nothing: six kinds of question, drag to reorder, optional switches. A checker says what hurts answer quality: more than five questions, leading wording, a changed NPS sentence, too few options.
+- **SurveyResults**: What the answers say, question by question: the NPS with its bands and trend over the shows, averages and bars for scales and choices, and the open answers as a list.
+
+## [Audit trail](./contest-audit.md)
+
+The record of who changed what: activity per day, filters, the list of changes, one change in full with a readable diff, and revert.
+
+- **AuditActivity**: How many changes were made on each day, as bars. The part of a bar that is sensitive (a deletion, a revert, a change to the gate or the pack, a serious decision) is drawn in red, so a day with something to look at stands out. Press a day to see only its changes.
+- **AuditFilters**: Narrow the trail: words (they match what was said, who did it and the id), a person, a time range, the kind of thing (in five groups), what was done, and "sensitive only". The line under it says how many of how many are shown, with a button to clear.
+- **AuditFeed**: The trail as a list in groups by day: the time, who, a sentence about what happened, what kind of thing it was, what was done, how many fields changed, a shield when it is sensitive and a mark when it was reverted (the sentence is struck through). It starts with a page of entries and has a button for more.
+- **AuditDiff**: What an entry changed, as phrases and not as JSON: the name of the field, the value it had and the value it has now. A list of things says what was added, removed and changed in it ("Changed: app-store (Minimum build 372 → 376)"). Added values are green, removed ones red, and each says so in words too.
+- **AuditEntryPanel**: One entry in full: who did what to which thing and when, why it is sensitive (if it is), what changed field by field, whether it can be reverted and what a revert would also undo, and the other changes to the same thing. The trail is append-only: a revert is a new entry, never an edit of this one.
+
 ## [Data & hooks](./contest-data.md)
 
 The backend interface, the in-memory backend, and the hooks that load and save contest data.
@@ -202,9 +307,19 @@ The backend interface, the in-memory backend, and the hooks that load and save c
 - **ContestAdapter**: Everything a contest app needs from a backend, as one typed interface. A real backend implements it; the in-memory adapter is the one that ships.
 - **createMemoryAdapter**: A ContestAdapter that keeps everything in memory and in localStorage. It behaves like a backend: calls are asynchronous, writes leave an audit trail, submissions are scored from the answer keys, and uploads report progress and can fail.
 - **useResource**: Loads one thing and keeps it in state, with `loading`, `error`, `reload` and `mutate`. The small base the other contest hooks are built on.
-- **useQuestions**: The questions, with `save` and `remove`. Needs a ContestProvider.
+- **usePacks**: The topics and every pack, with `publish`, `restore` and `saveTopic`. Each write loads the snapshot again and rejects with a sentence when it is not allowed.
+- **useGate**: The version gate in force, the one that starts later (if any), and how many players use each build, with `save`. Saving sends a new revision; the server keeps the list of builds the store offers.
+- **useModeration**: The reports, the violations and who is working on which case, with `claim`, `release` and `resolve`. Every write loads the snapshot again.
+- **useQuestions**: The questions, with `save`, `remove` and `review`. Needs a ContestProvider.
 - **useAnswerKeys**: The answer keys of the given questions, by question id, with `save`.
 - **useMedia**: The media library, with `upload`, `update` and `remove`. `upload` takes the same options as `MediaUploader` passes, so progress and cancel just work.
+- **useProgram**: The weekly program, with `save`. Saving sends a new revision; the server decides the revision number and refuses a change to a show that is on air, or a change to a show people registered for unless `confirmed` is true.
+- **useRegistrations**: How many people registered for each show, by occurrence key (`slotId@YYYY-MM-DD`).
+- **useEpisodes**: The weekly shows, with `save`. Reading them is also what sends reminders that are due.
+- **useLive**: The live show now, or null. It asks again every few hundred milliseconds and the adapter works the state up to the server clock each time. `send` sends a command.
+- **useLiveShow**: Everything a screen needs to show the live show: its state, the context the state machine needs, a `send` for commands, and the server clock.
+- **useLiveSimulation**: Pretend players for a demo: bots join the lobby one by one and answer each question after a think time that depends on the bot and the question. A fixed seed gives the same crowd every time.
+- **useSurveys**: The surveys, with `save`. useSurveyResponses gives the answers (all, or one survey's) with `submit`. usePrefs gives one person's notification preferences with `save`.
 - **useRankReplay**: What changed since I last looked, for a ranking: it shows the ranking the person saw last time, then moves to the current one, so rows slide into their new places.
 - **useMySubmission**: One participant's own submission, created on first use, with `saveAnswer` and `submit`. Submitting locks it and scores it from the keys.
 - **useContest**: The remaining read hooks: the contest itself, participants, all submissions, announcements, notifications and the audit trail. Each returns `data`, `loading`, `error` and its own save calls.
@@ -220,6 +335,13 @@ Pure functions: scoring, question types, upload rules and crop maths.
 - **announcementProblems**: What stops an announcement from going out, in words: no title, no message, no channel, nobody in the audience, an unknown merge field, a schedule in the past.
 - **rankParticipants**: Rankings: everyone who submitted, best first, with ties sharing a place (1, 2, 2, 4); teams by the average of their members; and how many places each person moved between two rankings.
 - **parseInvites**: Reads a pasted list of people, one per line, and says which lines are fine and why the others are not.
+- **diffEntry**: The audit trail as plain functions: what an entry changed field by field, whether it is sensitive, whether it can be reverted and what a revert would also undo, how to filter, group and count the trail by day, and how to export it.
+- **diffPack**: Content packs as plain functions: which approved questions can go into a pack, what a pack would hold, how the bank has moved since a pack was made, how many weeks of the daily shows each topic can feed, and what is wrong with a pack before it is published.
+- **verdictOf**: The version gate as plain functions: what a build is told, how many players that touches, what is wrong with a gate, what a change would do before it is saved, and which gate is in force at a given time.
+- **groupReports**: Reports and moderation as plain functions: which open reports are one case, how urgent a case is and why, what the data says about a player or a question, how reliable a reporter has been, the next step on the ladder, and what a decision does.
+- **reviewActions**: The review of questions as plain functions: the stage a question is in, what a given person can do to it (and why not), the question after an action, a dry run of an action on many questions, and the counts of the views.
+- **occurrences**: The weekly program as plain functions: every show of the coming days as a dated occurrence, its state (upcoming, soon, live, done), what a change does to the people who registered, and what is wrong with the program.
+- **zonedInstant**: Wall-clock time in a named time zone, with no library: the instant at which a zone's clock reads a date and time, what a clock reads at an instant, and small calendar steps.
 - **dayLabel**: Small date helpers for lists of messages: "Today", "Yesterday" or the date, "5 min ago", and the time of day.
 - **validateMediaFile**: Checks a file against upload rules (type, size, picture dimensions, length) and answers with a sentence a person can act on. Also formats sizes and times.
 - **mediaUsage**: How many questions use each media file, counting the prompt and every option. Feed it to MediaLibrary so a file in use says so, and a delete warns.

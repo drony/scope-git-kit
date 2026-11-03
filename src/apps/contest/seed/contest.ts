@@ -16,11 +16,16 @@ import type {
 } from '@/contest/data/types'
 import { scoreSubmission } from '@/contest/lib/scoring'
 import { mulberry32 } from '@/kit/lib/random'
+import { day } from './time'
+import { seedAudit } from './audit'
+import { CLIENTS, GATE, buildUsage } from './gate'
+import { CLAIMS, REPORTS, VIOLATIONS, applyEvidence } from './moderation'
+import { TOPICS, seedPacks } from './packs'
+import { PROGRAM, registrations } from './program'
+import { REVIEW, withReviews } from './review'
+import { DETAILS, SURVEYS, WEEKLY, registerKeys, surveyResponses, weeklyEpisodes } from './weekly'
 
 /** The demo's "today" at 09:00 UTC, so dates, countdowns and "Yesterday" labels always make sense. */
-const T0 = new Date().setUTCHours(9, 0, 0, 0)
-const day = (n: number, hour = 9) => new Date(T0 + n * 86_400_000 + (hour - 9) * 3_600_000).toISOString()
-
 /* ---- Media: small generated pictures, so the demo needs no files ------------------------------------------------ */
 
 type Art = { id: string; name: string; alt: string; tags: string[]; a: string; b: string; shape: 'rainbow' | 'waves' | 'mountains' | 'sun' | 'grid' | 'dots'; state: MediaAsset['moderation'] }
@@ -125,6 +130,7 @@ const participants: Participant[] = NAMES.map(([name, team], i) => ({
   team,
   status: i < 8 ? 'finished' : i < 10 ? 'active' : 'invited',
   joinedAt: i < 10 ? day(-1, 9) : undefined,
+  client: CLIENTS[`p${i + 1}`],
 }))
 
 /** A right or a wrong answer for a question, depending on a coin. */
@@ -148,9 +154,9 @@ function answerFor(q: Question, right: boolean, rnd: () => number): AnswerValue 
 }
 
 const rnd = mulberry32(2027)
-const submissions: Submission[] = participants
-  .filter((p) => p.status === 'finished' || p.status === 'active')
-  .map((p, i) => {
+const entrants = participants.filter((p) => p.status === 'finished' || p.status === 'active')
+const generated = Object.fromEntries(
+  entrants.map((p, i) => {
     const skill = 0.45 + ((i * 37) % 50) / 100
     const answers: Answer[] = []
     for (const q of questions.filter((x) => x.status === 'published')) {
@@ -158,6 +164,13 @@ const submissions: Submission[] = participants
       const value = answerFor(q, rnd() < skill, rnd)
       if (value) answers.push({ questionId: q.id, value, answeredAt: day(-1, 11), spentSec: 8 + Math.round(rnd() * 40) })
     }
+    return [p.id, answers] as const
+  }),
+)
+const answersBy = applyEvidence(generated)
+const submissions: Submission[] = entrants
+  .map((p) => {
+    const answers = answersBy[p.id]
     const results = scoreSubmission(questions.filter((q) => q.status === 'published'), answerKeys, answers)
     const scores = Object.fromEntries(Object.entries(results).map(([id, r]) => [id, { points: r.points, max: r.max, auto: r.auto, note: r.reason }]))
     return {
@@ -189,7 +202,28 @@ const notifications: Notification[] = [
 
 /* ---- The whole state -------------------------------------------------------------------------------------------- */
 
-export const CONTEST_SEED: ContestState = {
+registerKeys(answerKeys)
+const allQuestions = [...withReviews([...questions.map((q) => ({ ...q, ...(DETAILS[q.id] ?? {}) })), ...WEEKLY.questions]), ...REVIEW.questions]
+
+const allKeys = { ...answerKeys, ...WEEKLY.keys, ...REVIEW.keys }
+
+const packs = seedPacks(allQuestions, allKeys)
+
+const state: ContestState = {
+  topics: TOPICS,
+  packs,
+  gate: GATE,
+  builds: buildUsage(),
+  reports: REPORTS,
+  violations: VIOLATIONS,
+  claims: CLAIMS,
+  program: PROGRAM,
+  registrations: registrations(),
+  episodes: weeklyEpisodes(questions),
+  surveys: SURVEYS,
+  surveyResponses: surveyResponses(),
+  prefs: [],
+  live: null,
   contest: {
     id: 'aurora-cup',
     title: 'Aurora Cup',
@@ -207,14 +241,19 @@ export const CONTEST_SEED: ContestState = {
       { id: 'pz3', place: 3, title: 'Book bundle', description: 'Five books chosen by the judges.' },
     ],
   },
-  questions,
-  answerKeys,
+  questions: allQuestions,
+  answerKeys: allKeys,
   media,
   participants,
   submissions,
   announcements,
   notifications,
   audit: [],
+}
+
+export const CONTEST_SEED: ContestState = {
+  ...state,
+  audit: seedAudit({ questions: allQuestions, participants, media, contest: state.contest, program: PROGRAM, gate: GATE, packs, topics: TOPICS, reports: REPORTS }),
 }
 
 /** The signed-in participant in the demo. */

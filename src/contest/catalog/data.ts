@@ -79,15 +79,56 @@ await mutate(() => api.deleteQuestion(id)) // runs the change, then reloads`,
     notes: ['`reload` keeps the old data on screen while it loads. `mutate` rejects with the original error so the caller can show it next to its form.'],
   },
   {
+    id: 'use-packs',
+    name: 'usePacks',
+    group: 'data',
+    kind: 'hook',
+    summary: 'The topics and every pack, with `publish`, `restore` and `saveTopic`. Each write loads the snapshot again and rejects with a sentence when it is not allowed.',
+    source: 'contest/hooks/useContestData.ts',
+    props: [],
+    example: `const { data, publish, restore, saveTopic } = usePacks()
+await publish({ topics: ['science', 'geography'], note: 'The new geography questions.' }, 'Ada')
+await restore('pack-r3', 'The new pack had a problem.', 'Ada')`,
+    notes: ['The server builds the pack from the approved questions: `publish` only chooses topics. It refuses an archived topic, a topic with no approved question, a note that is too short and a pack equal to the one in force.'],
+  },
+  {
+    id: 'use-gate',
+    name: 'useGate',
+    group: 'data',
+    kind: 'hook',
+    summary: 'The version gate in force, the one that starts later (if any), and how many players use each build, with `save`. Saving sends a new revision; the server keeps the list of builds the store offers.',
+    source: 'contest/hooks/useContestData.ts',
+    props: [prop('pollMs', 'number', 'Ask again every this many milliseconds. 0 means once.', { default: '0' })],
+    example: `const { data, save } = useGate(4000)
+const rule = gateInForce(data.current, data.next, Date.now())
+await save({ ...draft, message: 'Please update.' }, { confirmed: true }, 'Ada')`,
+    notes: ['`save` rejects with a sentence when the gate is not allowed: a minimum above the newest build, a link that is not https, a change that needs a confirmation.'],
+  },
+  {
+    id: 'use-moderation',
+    name: 'useModeration',
+    group: 'data',
+    kind: 'hook',
+    summary: 'The reports, the violations and who is working on which case, with `claim`, `release` and `resolve`. Every write loads the snapshot again.',
+    source: 'contest/hooks/useContestData.ts',
+    props: [prop('pollMs', 'number', 'Ask again every this many milliseconds. 0 means once.', { default: '0' })],
+    example: `const { data, claim, release, resolve } = useModeration()
+await claim('player:p7', 'Ada')
+const { resolved, violation } = await resolve('player:p7', { action: 'suspend', days: 3, note: 'Answers within a second.' }, 'Ada')`,
+    notes: ['`resolve` rejects with a sentence when the decision is not allowed: someone else holds the case, the reason is too short, the question is in a show that has not finished. Show it in a toast.'],
+  },
+  {
     id: 'use-questions',
     name: 'useQuestions',
     group: 'data',
     kind: 'hook',
-    summary: 'The questions, with `save` and `remove`. Needs a ContestProvider.',
+    summary: 'The questions, with `save`, `remove` and `review`. Needs a ContestProvider.',
     source: 'contest/hooks/useContestData.ts',
     props: [],
-    example: `const { data: questions = [], save, remove } = useQuestions()
-await save({ ...question, points: 20 }, 'Ada')`,
+    example: `const { data: questions = [], save, remove, review } = useQuestions()
+await save({ ...question, points: 20 }, 'Ada')
+const { changed, skipped } = await review(['q34', 'q35'], 'preapprove', undefined, 'Ada')`,
+    notes: ['`review` does a review action (see `reviewActions`) to many questions. It resolves with what changed and what was left out, each with a reason; only a failure of the call itself rejects.'],
   },
   {
     id: 'use-answer-keys',
@@ -110,6 +151,95 @@ await save('q1', key, 'Ada')`,
     props: [],
     example: `const { data: assets = [], upload, update, remove } = useMedia()
 <MediaUploader onUpload={(file, o) => upload(file, o)} />`,
+  },
+  {
+    id: 'use-program',
+    name: 'useProgram',
+    group: 'data',
+    kind: 'hook',
+    summary: 'The weekly program, with `save`. Saving sends a new revision; the server decides the revision number and refuses a change to a show that is on air, or a change to a show people registered for unless `confirmed` is true.',
+    source: 'contest/hooks/useContestData.ts',
+    props: [],
+    example: `const { data: program, save } = useProgram()
+await save(draft, { confirmed: true })`,
+    notes: ['`save` rejects with a sentence a person can read: show it in a toast. See `impactOf` and `programChecks` for the same rules without a server.'],
+  },
+  {
+    id: 'use-registrations',
+    name: 'useRegistrations',
+    group: 'data',
+    kind: 'hook',
+    summary: 'How many people registered for each show, by occurrence key (`slotId@YYYY-MM-DD`).',
+    source: 'contest/hooks/useContestData.ts',
+    props: [prop('pollMs', 'number', 'Ask again every this many milliseconds. 0 means once.', { default: '0' })],
+    example: `const { data: registrations = {} } = useRegistrations(5000)
+registrations[occurrenceKey(slot.id, '2026-11-03')] // 864`,
+  },
+  {
+    id: 'use-episodes',
+    name: 'useEpisodes',
+    group: 'data',
+    kind: 'hook',
+    summary: 'The weekly shows, with `save`. Reading them is also what sends reminders that are due.',
+    source: 'contest/hooks/useContestData.ts',
+    props: [prop('pollMs', 'number', 'Ask again every this many milliseconds. 0 means once.', { default: '0' })],
+    example: `const { data: episodes = [], save } = useEpisodes(5000)`,
+  },
+  {
+    id: 'use-live',
+    name: 'useLive',
+    group: 'data',
+    kind: 'hook',
+    summary: 'The live show now, or null. It asks again every few hundred milliseconds and the adapter works the state up to the server clock each time. `send` sends a command.',
+    source: 'contest/hooks/useContestData.ts',
+    props: [prop('pollMs', 'number', 'Ask again every this many milliseconds.', { default: '400' })],
+    example: `const { data: live, send } = useLive()
+await send({ type: 'start' })`,
+  },
+  {
+    id: 'use-live-show',
+    name: 'useLiveShow',
+    group: 'data',
+    kind: 'hook',
+    summary: 'Everything a screen needs to show the live show: its state, the context the state machine needs, a `send` for commands, and the server clock.',
+    source: 'contest/hooks/useLiveShow.ts',
+    props: [prop('pollMs', 'number', 'Ask again every this many milliseconds.', { default: '400' })],
+    example: `const { live, ctx, send, now } = useLiveShow()
+if (live && ctx) return <LiveStage state={live} ctx={ctx} now={now} … />`,
+  },
+  {
+    id: 'use-live-simulation',
+    name: 'useLiveSimulation',
+    group: 'data',
+    kind: 'hook',
+    summary: 'Pretend players for a demo: bots join the lobby one by one and answer each question after a think time that depends on the bot and the question. A fixed seed gives the same crowd every time.',
+    source: 'contest/hooks/useLiveSimulation.ts',
+    props: [
+      prop('live', 'LiveState | null', 'The live show now.', { required: true }),
+      prop('ctx', 'LiveContext | null', 'The show, the questions and the keys.', { required: true }),
+      prop('enabled', 'boolean', 'Switches the bots on.', { required: true }),
+      prop('count', 'number', 'How many bots.', { default: '24' }),
+      prop('seed', 'number', 'Makes the crowd repeatable.', { default: '11' }),
+    ],
+    example: `useLiveSimulation(live, ctx, simulate)`,
+    notes: ['Bots talk to the adapter directly. A real show has no use for this: real players answer from their own screens.'],
+  },
+  {
+    id: 'use-surveys',
+    name: 'useSurveys',
+    group: 'data',
+    kind: 'hook',
+    summary: 'The surveys, with `save`. useSurveyResponses gives the answers (all, or one survey\'s) with `submit`. usePrefs gives one person\'s notification preferences with `save`.',
+    source: 'contest/hooks/useContestData.ts',
+    exports: ['useSurveys', 'useSurveyResponses', 'usePrefs'],
+    imports: ['useSurveys', 'useSurveyResponses', 'usePrefs'],
+    props: [
+      prop('surveyId', 'string', 'For `useSurveyResponses`: only this survey.'),
+      prop('participantId', 'string', 'For `usePrefs`: whose preferences.'),
+    ],
+    example: `const { data: surveys = [] } = useSurveys()
+const { submit } = useSurveyResponses(survey.id)
+const { data: prefs, save } = usePrefs(me.id)`,
   },
   {
     id: 'use-rank-replay',
@@ -154,6 +284,6 @@ const { rows, changes } = useRankReplay(ranked, 'public')
     example: `const { data: contest } = useContest()
 const { data: audit = [], revert } = useAudit()
 const { data: notes = [], markRead } = useNotifications(me.id)`,
-    notes: ['`useAudit().revert(id)` puts an entity back the way it was before that entry.', '`useParticipants()` also gives `invite(people)`; `useSubmissions()` gives `saveScore`; `useAnnouncements()` gives `save` and `send`.'],
+    notes: ['`useAudit().revert(id, actor)` puts an entity back the way it was before that entry. The revert is a new entry with `of` set to the entry it reverted.', '`useParticipants()` also gives `invite(people)`; `useSubmissions()` gives `saveScore`; `useAnnouncements()` gives `save` and `send`.'],
   },
 ]

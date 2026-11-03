@@ -4,7 +4,7 @@
 
 Write an announcement for the right people and channels, preview it, and show it to participants as news and as a bell.
 
-[AnnouncementComposer](#announcementcomposer) · [ChannelPreview](#channelpreview) · [DeliveryStatus](#deliverystatus) · [AnnouncementFeed](#announcementfeed) · [NotificationCenter](#notificationcenter)
+[AnnouncementComposer](#announcementcomposer) · [ChannelPreview](#channelpreview) · [DeliveryStatus](#deliverystatus) · [AnnouncementFeed](#announcementfeed) · [ReminderPlanner](#reminderplanner) · [NotificationPreferences](#notificationpreferences) · [PushPrimer](#pushprimer) · [NotificationCenter](#notificationcenter)
 
 ### AnnouncementComposer
 
@@ -98,6 +98,69 @@ import { AnnouncementFeed } from '@/contest/components/AnnouncementFeed'
 ```tsx
 <AnnouncementFeed announcements={announcements} vars={{ name: 'Kai', team: 'Orbit', contest: 'Aurora Cup' }} />
 ```
+
+### ReminderPlanner
+
+The reminders before a show on a time line: a day before, an hour before, ten minutes before, and "starting now". Each has its channels and a clock time worked out from the start. After sending, a delivery report.
+
+```ts
+import { ReminderPlanner } from '@/contest/components/ReminderPlanner'
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `episode` *(required)* | `Episode` |  | The show whose reminders are edited. |
+| `onChange` *(required)* | `(episode: Episode) => void` |  | Called with the whole updated show. |
+| `now` | `number` | `Date.now()` | Replaces the clock, for tests and demos. |
+| `className` | `string` |  | Extra classes. |
+
+```tsx
+<ReminderPlanner episode={draft} onChange={setDraft} />
+```
+
+- Steps come from a fixed list, so the same reminder is never added twice. Whether a person gets one also depends on their own preferences (see `allowed`).
+
+### NotificationPreferences
+
+A person's say over what reaches them: a grid of kinds of message by channel, quiet hours in their own time zone for push and e-mail, and an optional daily summary. The in-app bell is never held back.
+
+```ts
+import { NotificationPreferences } from '@/contest/components/NotificationPreferences'
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` *(required)* | `NotificationPrefs` |  | The preferences being edited. |
+| `onChange` *(required)* | `(prefs: NotificationPrefs) => void` |  | Called with the whole updated preferences. |
+| `timezones` | `string[]` |  | Time zones to offer. The person's own is added. |
+| `className` | `string` |  | Extra classes. |
+
+```tsx
+<NotificationPreferences value={prefs} onChange={setPrefs} />
+```
+
+- A critical message, such as "the show is starting", ignores quiet hours and the daily summary, but still respects a channel that is switched off.
+
+### PushPrimer
+
+A soft question before the system's own permission box. It says what the person gets and asks first. The browser prompt appears only after "Turn on".
+
+```ts
+import { PushPrimer } from '@/contest/components/PushPrimer'
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `onAllow` *(required)* | `() => void` |  | Called when the person agrees. Only now ask the browser or phone for permission. |
+| `onLater` *(required)* | `() => void` |  | Called on "Not now". Ask again later, at a moment that makes sense. |
+| `benefits` | `string[]` |  | What the person gets, in a few words each. |
+| `className` | `string` |  | Extra classes. |
+
+```tsx
+<PushPrimer onAllow={askBrowser} onLater={() => setShown(false)} />
+```
+
+- A refused system prompt is hard to undo; a refused soft prompt is not. That is why the soft one comes first.
 
 ### NotificationCenter
 

@@ -4,7 +4,7 @@
 
 Write a question, set its answer key, preview it as a participant, and run the quiz.
 
-[QuestionView](#questionview) · [AnswerInput](#answerinput) · [QuestionComposer](#questioncomposer) · [AnswerOptionsEditor](#answeroptionseditor) · [AnswerKeyEditor](#answerkeyeditor) · [QuestionPreview](#questionpreview) · [QuestionBank](#questionbank) · [QuizRunner](#quizrunner)
+[QuestionView](#questionview) · [AnswerInput](#answerinput) · [QuestionQuickEditor](#questionquickeditor) · [QuestionImport](#questionimport) · [QuestionComposer](#questioncomposer) · [AnswerOptionsEditor](#answeroptionseditor) · [AnswerKeyEditor](#answerkeyeditor) · [QuestionPreview](#questionpreview) · [QuestionBank](#questionbank) · [QuizRunner](#quizrunner)
 
 ### QuestionView
 
@@ -68,6 +68,53 @@ import { AnswerInput } from '@/contest/components/Answers'
 - Choice questions use native radio buttons and checkboxes, so the keyboard works. Ordering lists are reordered with the handle, or with Space and the arrow keys.
 - Number answers keep what the person typed ("3." stays "3.") while the answer holds the parsed number. A comma works as a decimal mark.
 - An ordering question starts shuffled (the same way every time for the same question).
+
+### QuestionQuickEditor
+
+Write a question and its answer in one place. Type the question, type the options, tick the right one next to it: the answer key is made as you go. Level, time and points start from sensible defaults.
+
+```ts
+import { QuestionQuickEditor } from '@/contest/components/QuestionQuickEditor'
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `question` *(required)* | `Question` |  | The question being written. |
+| `answerKey` *(required)* | `AnswerKey \| null` |  | The key. Null is fine: the editor makes a blank one that fits. |
+| `onChange` *(required)* | `(question: Question, key: AnswerKey) => void` |  | Called with the question and its key on every change. They are always in step. |
+| `media` | `(id: string) => MediaAsset \| undefined` |  | Looks up attached media. |
+| `onPickMedia` | `(target: { kind: 'prompt' } \| { kind: 'option'; id: string }) => void` |  | Shows picture buttons: open your media picker. |
+| `knownTags` | `string[]` | `[]` | Topics used elsewhere, offered while typing. |
+| `reviewer` | `string` |  | Written into "I checked the answer" on the source. |
+| `className` | `string` |  | Extra classes. |
+
+```tsx
+<QuestionQuickEditor question={draft.q} answerKey={draft.key} onChange={(q, key) => setDraft({ q, key })} knownTags={tags} />
+```
+
+- Enter adds an option, Backspace on an empty option removes it, the arrow keys move between options, and a list pasted into an option becomes many options (start the right one with *).
+- Changing the level changes points and time too, unless the writer set their own. Source, hint, explanation, pictures and partial credit wait under "More".
+- `readiness` and `tidy` (in `lib/quick.ts`) say what is missing and drop the empty option rows when a question is finished.
+
+### QuestionImport
+
+Write or paste many questions at once. Blocks are split by a blank line: the first line is the question, the lines below are options, a * marks the right one. The list is read as you type.
+
+```ts
+import { QuestionImport } from '@/contest/components/QuestionImport'
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `open` *(required)* | `boolean` |  | Shows the dialog. |
+| `onClose` *(required)* | `() => void` |  | Called when the dialog is cancelled or finished. |
+| `onImport` *(required)* | `(items: Array<{ question: Question; key: AnswerKey }>) => void \| Promise<void>` |  | Called with the questions that were read, as drafts. |
+
+```tsx
+<QuestionImport open={importing} onClose={() => setImporting(false)} onImport={(items) => saveAll(items)} />
+```
+
+- See `parseQuestions` for the format: `Answer: B`, `Tags: space`, `Level: 3` lines are understood too.
 
 ### QuestionComposer
 
