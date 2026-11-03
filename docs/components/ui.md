@@ -4,7 +4,7 @@
 
 Buttons, badges, cards, feedback and page scaffolding.
 
-[Button](#button) · [ApiReference](#apireference) · [Tag](#tag) · [Chip](#chip) · [Badge](#badge) · [Delta](#delta) · [Dot, Eyebrow, Kbd](#dot-eyebrow-kbd) · [StarButton](#starbutton) · [Card, CardHead, Kpi](#card-cardhead-kpi) · [Alert](#alert) · [Meter](#meter) · [Skeleton](#skeleton) · [EmptyState](#emptystate) · [Avatar, AvatarGroup](#avatar-avatargroup) · [Terminal, CopyButton](#terminal-copybutton) · [Section, SectionHead, PageHero](#section-sectionhead-pagehero) · [Reveal](#reveal) · [AssetIcon](#asseticon) · [Countdown](#countdown) · [Timeline](#timeline) · [SplitPane](#splitpane) · [PreviewFrame](#previewframe)
+[Button](#button) · [ApiReference](#apireference) · [CountdownRing](#countdownring) · [Tag](#tag) · [Chip](#chip) · [Badge](#badge) · [Delta](#delta) · [Dot, Eyebrow, Kbd](#dot-eyebrow-kbd) · [StarButton](#starbutton) · [Card, CardHead, Kpi](#card-cardhead-kpi) · [Alert](#alert) · [Meter](#meter) · [Skeleton](#skeleton) · [EmptyState](#emptystate) · [Avatar, AvatarGroup](#avatar-avatargroup) · [Terminal, CopyButton](#terminal-copybutton) · [Section, SectionHead, PageHero](#section-sectionhead-pagehero) · [Reveal](#reveal) · [AssetIcon](#asseticon) · [Countdown](#countdown) · [Timeline](#timeline) · [SplitPane](#splitpane) · [PreviewFrame](#previewframe)
 
 ### Button
 
@@ -53,6 +53,31 @@ import { ApiReference } from '@/kit/components/docs/ApiReference'
 ```
 
 - Typing in the search box looks at names, summaries and exports across every group.
+
+### CountdownRing
+
+A ring that empties as time runs out, with the seconds left in the middle. It turns urgent in the last five seconds. You pass the time left, so it follows any clock.
+
+```ts
+import { CountdownRing } from '@/kit/components/ui/CountdownRing'
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `remainingMs` *(required)* | `number` |  | Milliseconds left. |
+| `totalMs` *(required)* | `number` |  | The whole time the ring counts down from. |
+| `size` | `number` | `96` | Width and height in px. |
+| `label` | `string` | `'Time left'` | Names the timer for screen readers. |
+| `announceAt` | `number[]` | `[10, 5]` | Seconds at which a screen reader is told how much time is left. Time is up is always announced. |
+| `children` | `ReactNode` |  | Replaces the seconds in the middle. |
+| `className` | `string` |  | Extra classes. |
+
+```tsx
+const now = useNow(100)
+<CountdownRing remainingMs={Math.max(0, endsAt - now)} totalMs={20_000} label="Time to answer" />
+```
+
+- Screen readers hear the time at `announceAt` and when it runs out, not every tick. With reduced motion the pulse and the sweep are switched off.
 
 ### Tag
 
@@ -385,7 +410,7 @@ import { Countdown } from '@/kit/components/ui/Countdown'
 | `now` | `() => number` |  | Replaces the clock, for tests and demos. |
 
 ```tsx
-<Countdown to="2027-03-10T23:59:00Z" doneLabel="The contest has closed" />
+<Countdown to="2027-03-10T23:59:00Z" doneLabel="Registration has closed" />
 ```
 
 ### Timeline

@@ -175,7 +175,7 @@
 @media (width <= 960px) {
   .dash-grid,
   .dash-grid-even {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 .range-field {

@@ -89,7 +89,7 @@ import { Menu } from '@/kit/components/overlays/Menu'
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `trigger` *(required)* | `ReactElement` |  | The element that opens the menu. |
-| `entries` *(required)* | `MenuEntry[]` |  | Items (`{ id, label, icon?, onSelect?, to?, danger? }`), `{ type: 'separator' }`, `{ type: 'label' }` and `{ type: 'custom', node }`. |
+| `entries` *(required)* | `MenuEntry[]` |  | Items (`{ id, label, icon?, onSelect?, to?, danger?, selected? }`), `{ type: 'separator' }`, `{ type: 'label' }` and `{ type: 'custom', node }`. |
 | `placement` | `Placement` | `'bottom-end'` | Preferred side. |
 
 ```tsx
@@ -101,6 +101,7 @@ import { Menu } from '@/kit/components/overlays/Menu'
 ```
 
 - ↑ ↓ move (wrapping), Enter selects, Esc closes. Items with `to` render router links.
+- An item with `selected` set (true or false) is a radio choice: the current one shows a check.
 
 ### Modal
 

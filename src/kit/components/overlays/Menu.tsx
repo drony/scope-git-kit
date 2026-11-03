@@ -1,5 +1,6 @@
 import { cloneElement, useRef, useState, type ReactElement, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { Check } from 'lucide-react'
 import {
   FloatingFocusManager,
   FloatingPortal,
@@ -27,6 +28,8 @@ export type MenuEntry =
       /** Renders a router link instead of a button. */
       to?: string
       danger?: boolean
+      /** Makes the item a radio choice: true marks the current one with a check. Leave it out for a plain action. */
+      selected?: boolean
     }
   | { type: 'separator'; id: string }
   | { type: 'label'; id: string; label: ReactNode }
@@ -84,7 +87,8 @@ export function Menu({
                   index += 1
                   const i = index
                   const common = {
-                    role: 'menuitem',
+                    role: entry.selected === undefined ? 'menuitem' : 'menuitemradio',
+                    'aria-checked': entry.selected,
                     tabIndex: active === i ? 0 : -1,
                     'data-active': active === i,
                     className: cn('menu-item', entry.danger && 'is-danger'),
@@ -107,6 +111,7 @@ export function Menu({
                     >
                       {entry.icon}
                       {entry.label}
+                      {entry.selected && <Check className="menu-check" aria-hidden="true" />}
                     </Link>
                   ) : (
                     <button
@@ -120,6 +125,7 @@ export function Menu({
                     >
                       {entry.icon}
                       {entry.label}
+                      {entry.selected && <Check className="menu-check" aria-hidden="true" />}
                     </button>
                   )
                 })}

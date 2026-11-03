@@ -55,6 +55,17 @@ set((prev) => ({ ...prev, name: 'Ada' }))`,
     notes: ['Returns `value`, `set`, `undo`, `redo`, `reset(value)`, `canUndo` and `canRedo`. `undo` and `redo` are stable references.'],
   },
   {
+    id: 'use-now',
+    name: 'useNow',
+    group: 'foundation',
+    kind: 'hook',
+    summary: 'The current time in milliseconds, updated on an interval. For countdowns and "5 minutes ago" labels.',
+    source: 'kit/hooks/useNow.ts',
+    props: [prop('intervalMs', 'number', 'How often it updates. 0 stops it.', { default: '250' })],
+    example: `const now = useNow(1000)
+const left = Math.max(0, deadline - now)`,
+  },
+  {
     id: 'use-flip',
     name: 'useFlip',
     group: 'foundation',

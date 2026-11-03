@@ -40,6 +40,25 @@ export const uiDocs: ComponentDoc[] = [
     notes: ['Typing in the search box looks at names, summaries and exports across every group.'],
   },
   {
+    id: 'countdown-ring',
+    name: 'CountdownRing',
+    group: 'ui',
+    summary: 'A ring that empties as time runs out, with the seconds left in the middle. It turns urgent in the last five seconds. You pass the time left, so it follows any clock.',
+    source: 'kit/components/ui/CountdownRing.tsx',
+    props: [
+      prop('remainingMs', 'number', 'Milliseconds left.', { required: true }),
+      prop('totalMs', 'number', 'The whole time the ring counts down from.', { required: true }),
+      prop('size', 'number', 'Width and height in px.', { default: '96' }),
+      prop('label', 'string', 'Names the timer for screen readers.', { default: "'Time left'" }),
+      prop('announceAt', 'number[]', 'Seconds at which a screen reader is told how much time is left. Time is up is always announced.', { default: '[10, 5]' }),
+      prop('children', 'ReactNode', 'Replaces the seconds in the middle.'),
+      prop('className', 'string', 'Extra classes.'),
+    ],
+    example: `const now = useNow(100)
+<CountdownRing remainingMs={Math.max(0, endsAt - now)} totalMs={20_000} label="Time to answer" />`,
+    notes: ['Screen readers hear the time at `announceAt` and when it runs out, not every tick. With reduced motion the pulse and the sweep are switched off.'],
+  },
+  {
     id: 'tag',
     name: 'Tag',
     group: 'ui',
@@ -271,7 +290,7 @@ export const uiDocs: ComponentDoc[] = [
       prop('labels', '{ days; hours; minutes; seconds }', 'Words under the blocks, for another language.'),
       prop('now', '() => number', 'Replaces the clock, for tests and demos.'),
     ],
-    example: `<Countdown to="2027-03-10T23:59:00Z" doneLabel="The contest has closed" />`,
+    example: `<Countdown to="2027-03-10T23:59:00Z" doneLabel="Registration has closed" />`,
     exports: ['Countdown'],
   },
   {

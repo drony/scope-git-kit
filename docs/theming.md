@@ -60,6 +60,14 @@ The full schema is `src/kit/theme/schema.ts`; the defaults and presets are in `s
 `mode: "system"` follows the operating system. The editor shows and edits the palette of the mode currently in use; switch
 mode in the **Style** tab to edit the other palette. `<html data-theme>` is `light` or `dark`.
 
+### Night-blue styles
+
+The default dark palette is **Deep ocean**, a dark blue. Two more ship with the kit: **Midnight** and **Twilight**
+(`NIGHT_STYLES` in `src/kit/theme/theme.ts`). `ThemeToggle` (the sun or moon button in the header of both demos) opens a menu
+with Light, the three dark styles and "Match the system". Choosing a style writes its palette to `theme.colors.dark`; the editor
+can still change single colors afterwards. To make another style the default, copy its palette into the `dark` block of your
+`app.config.json`. Text on every style has at least 5.5:1 contrast on the page and card colors.
+
 ## Contrast
 
 The **Colors** tab shows the WCAG contrast of the most important pairs (headings, body, secondary text, button label, accent)

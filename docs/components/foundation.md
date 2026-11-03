@@ -4,7 +4,7 @@
 
 Configuration, toasts, undo/redo, autosave, formatting and helpers.
 
-[ConfigProvider](#configprovider) · [ToastProvider](#toastprovider) · [useHistory](#usehistory) · [useFlip](#useflip) · [useAutosave](#useautosave) · [useEditStore](#useeditstore) · [useStoredSet](#usestoredset) · [useTryList](#usetrylist) · [useCopy](#usecopy) · [useMedia](#usemedia) · [usePageTitle](#usepagetitle) · [useFormat](#useformat) · [useText, useLang](#usetext-uselang) · [Utilities](#utilities)
+[ConfigProvider](#configprovider) · [ToastProvider](#toastprovider) · [useHistory](#usehistory) · [useNow](#usenow) · [useFlip](#useflip) · [useAutosave](#useautosave) · [useEditStore](#useeditstore) · [useStoredSet](#usestoredset) · [useTryList](#usetrylist) · [useCopy](#usecopy) · [useMedia](#usemedia) · [usePageTitle](#usepagetitle) · [useFormat](#useformat) · [useText, useLang](#usetext-uselang) · [Utilities](#utilities)
 
 ### ConfigProvider
 
@@ -74,6 +74,23 @@ set((prev) => ({ ...prev, name: 'Ada' }))
 ```
 
 - Returns `value`, `set`, `undo`, `redo`, `reset(value)`, `canUndo` and `canRedo`. `undo` and `redo` are stable references.
+
+### useNow
+
+The current time in milliseconds, updated on an interval. For countdowns and "5 minutes ago" labels.
+
+```ts
+import { useNow } from '@/kit/hooks/useNow'
+```
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `intervalMs` | `number` | `250` | How often it updates. 0 stops it. |
+
+```tsx
+const now = useNow(1000)
+const left = Math.max(0, deadline - now)
+```
 
 ### useFlip
 

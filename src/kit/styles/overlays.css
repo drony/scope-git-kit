@@ -50,6 +50,16 @@
   background: var(--hairline);
   color: var(--ink);
 }
+.menu-item .theme-swatch {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  flex: none;
+}
+.menu-item .menu-check {
+  margin-left: auto;
+  color: var(--ink);
+}
 .menu-item.is-danger,
 .menu-item.is-danger svg {
   color: var(--error);

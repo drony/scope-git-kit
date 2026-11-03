@@ -24,6 +24,19 @@ export const themeDocs: ComponentDoc[] = [
     example: `<ThemeDock settingsPath="/settings" />`,
   },
   {
+    id: 'theme-toggle',
+    name: 'ThemeToggle',
+    group: 'theme',
+    summary: 'An icon button that opens a small menu: light, one of three night-blue dark styles (Deep ocean, Midnight, Twilight) or the system setting. The choice is kept in this browser like any other theme edit.',
+    source: 'kit/components/theme/ThemeToggle.tsx',
+    props: [prop('className', 'string', 'Extra classes.')],
+    example: `<SiteHeader brand={<Logo />} actions={<ThemeToggle />}>…</SiteHeader>`,
+    notes: [
+      'Reads and writes `theme.mode` and `theme.colors.dark` through `useConfig()`, so it needs a `ConfigProvider` above it.',
+      'Choosing a dark style replaces the dark palette; the theme editor can still change single colors afterwards. The styles are in `NIGHT_STYLES` (`kit/theme/theme.ts`); the first one is the default dark palette.',
+    ],
+  },
+  {
     id: 'color-field',
     name: 'ColorField',
     group: 'theme',

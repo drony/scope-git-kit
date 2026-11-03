@@ -10,6 +10,7 @@ Buttons, badges, cards, feedback and page scaffolding.
 
 - **Button**: The action button, in four variants and three sizes. ButtonLink renders a router link that looks the same.
 - **ApiReference**: A component catalog as a searchable reference: one tab per group and one expandable entry per component, with its props, an example and notes. It renders any catalog in the shape of `kit/catalog/define.ts`.
+- **CountdownRing**: A ring that empties as time runs out, with the seconds left in the middle. It turns urgent in the last five seconds. You pass the time left, so it follows any clock.
 - **Tag**: A small uppercase label for status or category.
 - **Chip**: A pill with an optional colored initial. With `onClick` it becomes a toggle button.
 - **Badge**: A bordered pill with an optional icon, for short facts such as "Read-only access".
@@ -48,6 +49,7 @@ Fields, inputs, selection controls, sliders and uploads.
 
 Tabs, segmented control, accordion, breadcrumbs, pagination, stepper and the mega menu.
 
+- **AppSwitcher**: A slim strip for the top of a page that links the apps of one site, so a visitor can look at every app in two clicks.
 - **Tabs**: An accessible tab list. Optionally renders the active panel too.
 - **Segmented**: A compact single-choice switch, such as chart ranges or list/grid.
 - **Accordion**: A list of disclosure sections built on native `<details>`.
@@ -117,6 +119,7 @@ The live theme editor and its parts.
 
 - **ThemeEditor**: The live theme editor: presets, light and dark palettes with contrast checks, gradient, chart colors, radius, widths, shadows, font, locale, currency, and JSON export, import and save.
 - **ThemeDock**: A floating “Theme” button that opens the editor beside the page. A design-time tool: it only mounts on the dev server.
+- **ThemeToggle**: An icon button that opens a small menu: light, one of three night-blue dark styles (Deep ocean, Midnight, Twilight) or the system setting. The choice is kept in this browser like any other theme edit.
 - **ColorField**: A native color picker plus a hex input that only commits valid colors.
 
 ## [Providers, hooks & utilities](./foundation.md)
@@ -126,6 +129,7 @@ Configuration, toasts, undo/redo, autosave, formatting and helpers.
 - **ConfigProvider**: Holds the live theme and site configuration, applies it as CSS variables, and exposes it through hooks. Wrap your app in it once.
 - **ToastProvider**: Transient messages in the bottom-right corner. `useToast().push(...)` shows one; it can carry a button such as Undo.
 - **useHistory**: State with undo and redo. Every `set` that changes the value is one undo step (100 are kept).
+- **useNow**: The current time in milliseconds, updated on an interval. For countdowns and "5 minutes ago" labels.
 - **useFlip**: Animates a list when its order changes: items slide from their old place to the new one. Skipped for people who prefer reduced motion.
 - **useAutosave**: Debounced autosave with a visible status and an on/off preference remembered in this browser.
 - **useEditStore**: Everything an editable table needs besides its rows: edits loaded from this browser, undo and redo, autosave, and props for DataGrid.

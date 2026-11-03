@@ -2,6 +2,22 @@ import { prop, type ComponentDoc } from './define.ts'
 
 export const navDocs: ComponentDoc[] = [
   {
+    id: 'app-switcher',
+    name: 'AppSwitcher',
+    group: 'nav',
+    summary: 'A slim strip for the top of a page that links the apps of one site, so a visitor can look at every app in two clicks.',
+    source: 'kit/components/nav/AppSwitcher.tsx',
+    props: [
+      prop('apps', '{ id: string; title: string; href: string }[]', 'The apps. `href` is a full page load: each app is its own page.', { required: true }),
+      prop('current', 'string', 'The id of the app that is open. It is marked and is not a link.', { required: true }),
+      prop('label', 'string', 'Names the strip, and is the short text before the links.', { default: "'Demos'" }),
+      prop('className', 'string', 'Extra classes.'),
+    ],
+    example: `<AppSwitcher apps={[{ id: 'shop', title: 'Shop', href: '/' }, { id: 'admin', title: 'Admin', href: '/admin/' }]} current="shop" />
+<SiteHeader … />`,
+    notes: ['Renders nothing when there are fewer than two apps. Put it above the site header; it scrolls away with the page and does not change the sticky header.'],
+  },
+  {
     id: 'tabs',
     name: 'Tabs',
     group: 'nav',

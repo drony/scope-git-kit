@@ -15,6 +15,7 @@ import { AssetIcon } from '@/kit/components/ui/AssetIcon'
 import { BrandMark } from '@/apps/finscope/layout/Logo'
 import { Meter } from '@/kit/components/ui/Feedback'
 import { Reveal } from '@/kit/components/ui/Reveal'
+import { Card } from '@/kit/components/ui/Card'
 import { Section, SectionHead } from '@/kit/components/ui/Section'
 import { Terminal } from '@/kit/components/ui/Terminal'
 import { Accordion } from '@/kit/components/nav/Accordion'
@@ -455,11 +456,34 @@ function ApiSection() {
   )
 }
 
+/** A way into the other demo built on the same kit. */
+function OtherDemo() {
+  const other = import.meta.env.APP_LINKS.find((a) => a.id !== 'finscope')
+  if (!other) return null
+  return (
+    <Section>
+      <Card className="row spread wrap">
+        <div className="stack">
+          <span className="eyebrow">Same kit, another product</span>
+          <strong>Looking at something different?</strong>
+          <p>
+            {other.title} is a contest platform built from the same components: questions and answers, media, announcements, participants and scoring.
+          </p>
+        </div>
+        <a className="btn has-arrow" href={other.href}>
+          Open {other.title}
+        </a>
+      </Card>
+    </Section>
+  )
+}
+
 export default function Home() {
   usePageTitle()
   return (
     <>
       <Hero />
+      <OtherDemo />
       <FiveNumbers />
       <ChartSection />
       <ScreenSection />

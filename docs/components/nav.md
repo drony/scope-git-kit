@@ -4,7 +4,29 @@
 
 Tabs, segmented control, accordion, breadcrumbs, pagination, stepper and the mega menu.
 
-[Tabs](#tabs) · [Segmented](#segmented) · [Accordion](#accordion) · [Breadcrumbs](#breadcrumbs) · [Pagination](#pagination) · [Stepper](#stepper) · [MegaMenu](#megamenu) · [SiteHeader](#siteheader) · [Brand](#brand) · [PageBar](#pagebar) · [AuthShell](#authshell)
+[AppSwitcher](#appswitcher) · [Tabs](#tabs) · [Segmented](#segmented) · [Accordion](#accordion) · [Breadcrumbs](#breadcrumbs) · [Pagination](#pagination) · [Stepper](#stepper) · [MegaMenu](#megamenu) · [SiteHeader](#siteheader) · [Brand](#brand) · [PageBar](#pagebar) · [AuthShell](#authshell)
+
+### AppSwitcher
+
+A slim strip for the top of a page that links the apps of one site, so a visitor can look at every app in two clicks.
+
+```ts
+import { AppSwitcher } from '@/kit/components/nav/AppSwitcher'
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `apps` *(required)* | `{ id: string; title: string; href: string }[]` |  | The apps. `href` is a full page load: each app is its own page. |
+| `current` *(required)* | `string` |  | The id of the app that is open. It is marked and is not a link. |
+| `label` | `string` | `'Demos'` | Names the strip, and is the short text before the links. |
+| `className` | `string` |  | Extra classes. |
+
+```tsx
+<AppSwitcher apps={[{ id: 'shop', title: 'Shop', href: '/' }, { id: 'admin', title: 'Admin', href: '/admin/' }]} current="shop" />
+<SiteHeader … />
+```
+
+- Renders nothing when there are fewer than two apps. Put it above the site header; it scrolls away with the page and does not change the sticky header.
 
 ### Tabs
 

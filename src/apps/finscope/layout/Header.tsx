@@ -8,6 +8,7 @@ import { Menu, type MenuEntry } from '@/kit/components/overlays/Menu'
 import { NAV } from '@/apps/finscope/config/navigation'
 import { MegaMenu } from '@/kit/components/nav/MegaMenu'
 import { SiteHeader } from '@/kit/components/nav/SiteHeader'
+import { ThemeToggle } from '@/kit/components/theme/ThemeToggle'
 import { MegaSide } from './MegaSide'
 import { MobileNav } from './MobileNav'
 
@@ -55,6 +56,7 @@ export function Header() {
       brand={<Logo />}
       actions={
         <>
+          <ThemeToggle />
           {user ? (
             <UserMenu />
           ) : (

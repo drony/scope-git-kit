@@ -22,6 +22,9 @@ const APPS = {
 } as const
 type AppId = keyof typeof APPS
 
+/** Where each app runs in development, so the apps can link to each other when both servers are up. */
+const DEV_PORTS: Record<AppId, number> = { finscope: 5173, contest: 5174 }
+
 const APP = (process.env.APP ?? 'finscope') as AppId
 if (!(APP in APPS)) throw new Error(`Unknown APP "${APP}". Use one of: ${Object.keys(APPS).join(', ')}`)
 const SETTINGS_FILE = `src/apps/${APP}/settings/app.config.json`
@@ -138,9 +141,17 @@ export default defineConfig(({ command }) => {
   const base = process.env.BASE_PATH || '/'
   // The first app owns the site root; every other app is built into dist/<app>/ and served under <base><app>/.
   const secondary = APP !== 'finscope'
+  // Every app gets the list of apps and where they live (`import.meta.env.APP_LINKS`), for the strip that links them.
+  const links = (Object.keys(APPS) as AppId[]).map((id) => ({
+    id,
+    title: APPS[id].title,
+    href: command === 'serve' ? `http://localhost:${DEV_PORTS[id]}/` : id === 'finscope' ? base : `${base}${id}/`,
+  }))
   return {
     base: command === 'build' && secondary ? `${base}${APP}/` : base,
     build: { outDir: secondary ? `dist/${APP}` : 'dist' },
+    server: { port: DEV_PORTS[APP] },
+    define: { 'import.meta.env.APP_LINKS': JSON.stringify(links) },
     plugins: [react(), appEntryPlugin(), saveConfigPlugin(), spaFallbackPlugin()],
     resolve: { alias: { '@': path.resolve(root, 'src') } },
   }

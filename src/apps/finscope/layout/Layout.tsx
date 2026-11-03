@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { pageWidth } from '@/apps/finscope/config/pages'
+import { AppSwitcher } from '@/kit/components/nav/AppSwitcher'
 import { ThemeDock } from '@/kit/components/theme/ThemeDock'
 import { Footer } from './Footer'
 import { Header } from './Header'
@@ -26,6 +27,7 @@ export function Layout() {
 
   return (
     <>
+      <AppSwitcher apps={import.meta.env.APP_LINKS} current="finscope" label="Two demos, one kit" />
       <Header />
       <main id="main">
         <Outlet />

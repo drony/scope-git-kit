@@ -9,7 +9,11 @@ import {
   type Theme,
 } from './schema'
 
-export const DRAFT_KEY = 'kit.config.draft'
+/**
+ * Where unsaved theme edits are kept in this browser. The base path is part of the key, so two apps served from one origin
+ * (`/site/` and `/site/other/`) each keep their own draft instead of overwriting each other's.
+ */
+export const DRAFT_KEY = `kit.config.draft:${import.meta.env.BASE_URL}`
 
 /* ------------------------------------------------------------------ */
 /* Factory defaults. app.config.json is "what is saved in the project";
@@ -35,24 +39,87 @@ export const FACTORY_LIGHT: Palette = {
   terminal: '#171717',
 }
 
-export const FACTORY_DARK: Palette = {
-  canvas: '#0a0a0a',
-  surface: '#111111',
-  soft: '#0d0d0d',
-  hairline: '#1a1a1a',
-  line: '#262626',
-  lineStrong: '#5c5c5c',
-  ink: '#ededed',
-  body: '#a1a1a1',
-  muted: '#8f8f8f',
-  primary: '#ededed',
-  primaryText: '#0a0a0a',
-  accent: '#3291ff',
-  success: '#0cce6b',
-  warning: '#f5a623',
-  error: '#ff5c5c',
-  terminal: '#000000',
+/**
+ * Ready-made dark palettes in shades of night blue. The first one is the default dark theme. A style is only a dark palette:
+ * choosing one writes it to `theme.colors.dark`, where the theme editor can still change it.
+ */
+export interface NightStyle {
+  id: string
+  name: string
+  palette: Palette
 }
+
+const NIGHT_BASE = { success: '#0cce6b', warning: '#f5a623', error: '#ff5c5c' }
+
+export const NIGHT_STYLES: NightStyle[] = [
+  {
+    id: 'ocean',
+    name: 'Deep ocean',
+    palette: {
+      canvas: '#07121c',
+      surface: '#0d1c2b',
+      soft: '#0a1724',
+      hairline: '#12253a',
+      line: '#1c3550',
+      lineStrong: '#4a7092',
+      ink: '#e6f1fa',
+      body: '#a3b9cc',
+      muted: '#7e98ae',
+      primary: '#e6f1fa',
+      primaryText: '#07121c',
+      accent: '#38bdf8',
+      terminal: '#050d15',
+      ...NIGHT_BASE,
+    },
+  },
+  {
+    id: 'midnight',
+    name: 'Midnight',
+    palette: {
+      canvas: '#0b1220',
+      surface: '#111a2e',
+      soft: '#0e1626',
+      hairline: '#16213a',
+      line: '#22304d',
+      lineStrong: '#5b6d94',
+      ink: '#e8eefc',
+      body: '#aab6d3',
+      muted: '#8391b3',
+      primary: '#e8eefc',
+      primaryText: '#0b1220',
+      accent: '#5ea8ff',
+      terminal: '#070c18',
+      ...NIGHT_BASE,
+    },
+  },
+  {
+    id: 'twilight',
+    name: 'Twilight',
+    palette: {
+      canvas: '#131a2e',
+      surface: '#1a2340',
+      soft: '#161e36',
+      hairline: '#202a4a',
+      line: '#2c3963',
+      lineStrong: '#6575a3',
+      ink: '#eef1fb',
+      body: '#b3bddb',
+      muted: '#8f9bc2',
+      primary: '#eef1fb',
+      primaryText: '#131a2e',
+      accent: '#8ab4ff',
+      terminal: '#0d1224',
+      ...NIGHT_BASE,
+    },
+  },
+]
+
+/** The style whose dark palette is in use, or undefined when the palette was edited. */
+export function nightStyleOf(dark: Palette): NightStyle | undefined {
+  return NIGHT_STYLES.find((s) => PALETTE_KEYS.every((k) => s.palette[k] === dark[k]))
+}
+
+export const FACTORY_DARK: Palette = NIGHT_STYLES[0].palette
 
 export const FACTORY: AppConfig = {
   version: 1,
@@ -211,7 +278,7 @@ export function applyTheme(theme: Theme, resolved: Resolved) {
   set('--nav-h', `${theme.style.navHeight}px`)
   set('--shadow-k', String({ none: 0, soft: 1, lifted: 2 }[theme.style.shadow]))
   set('--edge', resolved === 'dark' ? '#ffffff1f' : '#0000000a')
-  set('--overlay', resolved === 'dark' ? '#000000a6' : '#17171766')
+  set('--overlay', resolved === 'dark' ? `${palette.terminal}b3` : '#17171766')
   set('--sans', FONT_STACKS[theme.style.font])
 
   root.dataset.theme = resolved

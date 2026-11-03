@@ -65,7 +65,7 @@ export const overlayDocs: ComponentDoc[] = [
     source: 'kit/components/overlays/Menu.tsx',
     props: [
       prop('trigger', 'ReactElement', 'The element that opens the menu.', { required: true }),
-      prop('entries', 'MenuEntry[]', "Items (`{ id, label, icon?, onSelect?, to?, danger? }`), `{ type: 'separator' }`, `{ type: 'label' }` and `{ type: 'custom', node }`.", { required: true }),
+      prop('entries', 'MenuEntry[]', "Items (`{ id, label, icon?, onSelect?, to?, danger?, selected? }`), `{ type: 'separator' }`, `{ type: 'label' }` and `{ type: 'custom', node }`.", { required: true }),
       prop('placement', 'Placement', 'Preferred side.', { default: "'bottom-end'" }),
     ],
     example: `<Menu trigger={<Button variant="ghost">Actions</Button>} entries={[
@@ -73,7 +73,7 @@ export const overlayDocs: ComponentDoc[] = [
   { type: 'separator', id: 's' },
   { id: 'delete', label: 'Delete', danger: true, onSelect: remove },
 ]} />`,
-    notes: ['↑ ↓ move (wrapping), Enter selects, Esc closes. Items with `to` render router links.'],
+    notes: ['↑ ↓ move (wrapping), Enter selects, Esc closes. Items with `to` render router links.', 'An item with `selected` set (true or false) is a radio choice: the current one shows a check.'],
   },
   {
     id: 'modal',

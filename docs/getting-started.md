@@ -10,7 +10,7 @@ npm run dev        # http://localhost:5173
 | Command | What it does |
 | --- | --- |
 | `npm run dev` | Dev server with hot reload for Finscope. Shows the floating **Theme** button. |
-| `npm run dev:contest` | The same for Contest Scope. |
+| `npm run dev:contest` | The same for Contest Scope, on port 5174, so both can run at once. A strip at the top of every page links the two apps. |
 | `npm run build` | Runs every check, then builds Finscope into `dist/` and Contest Scope into `dist/contest/`. |
 | `npm run build:finscope`, `npm run build:contest` | Build one app. Build Finscope first: it empties `dist/`. |
 | `npm run check` | Type check, layer check and docs check, without building. |

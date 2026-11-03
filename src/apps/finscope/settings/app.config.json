@@ -30,22 +30,22 @@
         "terminal": "#171717"
       },
       "dark": {
-        "canvas": "#0a0a0a",
-        "surface": "#111111",
-        "soft": "#0d0d0d",
-        "hairline": "#1a1a1a",
-        "line": "#262626",
-        "lineStrong": "#5c5c5c",
-        "ink": "#ededed",
-        "body": "#a1a1a1",
-        "muted": "#8f8f8f",
-        "primary": "#ededed",
-        "primaryText": "#0a0a0a",
-        "accent": "#3291ff",
+        "canvas": "#07121c",
+        "surface": "#0d1c2b",
+        "soft": "#0a1724",
+        "hairline": "#12253a",
+        "line": "#1c3550",
+        "lineStrong": "#4a7092",
+        "ink": "#e6f1fa",
+        "body": "#a3b9cc",
+        "muted": "#7e98ae",
+        "primary": "#e6f1fa",
+        "primaryText": "#07121c",
+        "accent": "#38bdf8",
         "success": "#0cce6b",
         "warning": "#f5a623",
         "error": "#ff5c5c",
-        "terminal": "#000000"
+        "terminal": "#050d15"
       }
     },
     "gradient": [
